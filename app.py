@@ -2,7 +2,7 @@ import os
 import warnings
 import streamlit as st
 from dotenv import load_dotenv
-from src.process import acs_main, brc_main
+from src.process import acs_main, brc_main, panu_main
 from src.session import clear_uploads, initialize_session_state
 from src.uploads import copy_uploads, show_uploads
 from src.utils import dropdown_options, get_file_paths
@@ -15,7 +15,8 @@ upload_path = os.getenv('UPLOAD_PATH')
 output_path = os.getenv('OUTPUT_PATH')
 
 # Clear and initialize session the first time the app starts up
-initialize_session_state()
+if "uploaded_files" not in st.session_state:
+    initialize_session_state()
 
 # Set up Streamlit page
 st.set_page_config(
@@ -73,7 +74,9 @@ if uploaded_file:
             st.write(f"\n{len(pdf_file_paths) - len(error_files)}/{len(pdf_file_paths)} files processed successfully!")
 
         elif option == "PANU":
-            pass
+            result = panu_main(pdf_file_paths, excel_file_paths)
+            total_files = len(pdf_file_paths) + len(excel_file_paths)
+            st.write(f"{total_files}/{total_files} files processed successfully!")
 
         elif option == "SINMIX":
             pass

@@ -20,9 +20,11 @@ def initialize_session_state():
     if 'uploaded_files' not in st.session_state:
         st.session_state["uploaded_files"] = []
 
-    # Remove all uploaded and output files
+    # Remove all uploaded and output files, including temporary files
     os.system("rm -rf {}".format(os.path.join(upload_path, "*")))
     os.system("rm -rf {}".format(os.path.join(output_path, "*")))
+    os.system("rm -rf {}".format(os.path.join(upload_path, "._*")))
+    os.system("rm -rf {}".format(os.path.join(output_path, "._*")))
 
 
 def clear_uploads():
@@ -32,4 +34,5 @@ def clear_uploads():
     st.session_state["uploaded_files"] = []
     st.session_state["file_uploader_key"] += 1
     os.system("rm -rf {}".format(os.path.join(upload_path, "*")))
+    os.system("rm -rf {}".format(os.path.join(upload_path, "._*")))
     st.rerun()
