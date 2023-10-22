@@ -1,0 +1,13 @@
+# Ignore data files
+/data/outputs/*
+/data/uploads/*
+!.gitkeep
+
+# Ignore pycache
+__pycache__/
+
+# Common development files
+*.log
+*.swp
+*.swo
+.DS_Store
