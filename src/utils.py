@@ -1,13 +1,29 @@
-import os
+#!/usr/bin/env python
+
+####################
+# Required Modules #
+####################
+
+# Generic/Built-in
 import glob
+import os
+
+# Libs
 import streamlit as st
 from dotenv import load_dotenv
+
+##################
+# Configurations #
+##################
 
 # Load environment variables
 load_dotenv()
 upload_path = os.getenv('UPLOAD_PATH')
 option_list = os.getenv('OPTIONS').split(',')
 
+#############
+# Functions #
+#############
 
 def get_file_paths():
     """
@@ -60,4 +76,3 @@ def print_result(option, total_files, error_files=None):
 
     elif option == "SINMIX":
         pass
-    

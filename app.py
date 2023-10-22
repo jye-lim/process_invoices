@@ -1,18 +1,34 @@
+#!/usr/bin/env python
+
+####################
+# Required Modules #
+####################
+
+# Generic/Built-in
 import os
-import warnings
+
+# Libs
 import streamlit as st
 from dotenv import load_dotenv
+
+# Custom
 from src.process import acs_main, brc_main, panu_main
 from src.session import clear_uploads, initialize_session_state
 from src.uploads import copy_uploads, show_uploads
 from src.utils import dropdown_options, get_file_paths, print_result
 
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+##################
+# Configurations #
+##################
 
 # Load environment variables
 load_dotenv()
 upload_path = os.getenv('UPLOAD_PATH')
 output_path = os.getenv('OUTPUT_PATH')
+
+##########
+# Script #
+##########
 
 # Clear and initialize session the first time the app starts up
 if "uploaded_files" not in st.session_state:

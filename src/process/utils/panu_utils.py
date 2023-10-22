@@ -1,7 +1,27 @@
+#!/usr/bin/env python
+
+####################
+# Required Modules #
+####################
+
+# Libs
 import pandas as pd
 
-# Get unique descriptions and total qty
+#############
+# Functions #
+#############
+
 def get_totals(contents):
+    """
+    Get unique descriptions and total qty.
+
+    Args:
+        contents (list): List of lists containing invoice details
+
+    Returns:
+        pricings (dict): Dictionary of unique descriptions and unit prices
+        total_qty (dict): Dictionary of unique descriptions and total quantities
+    """
     pricings = dict()
     total_qty = dict()
 
@@ -15,16 +35,37 @@ def get_totals(contents):
     return pricings, total_qty
 
 
-# Extract data from line using for loop
 def extract_data(line, data_dict):
+    """
+    Extract data from line using for loop.
+
+    Args:
+        line (str): Line of text
+        data_dict (dict): Dictionary of data
+
+    Returns:
+        str: Data extracted from line
+    """
     for key in data_dict:
         if key in line:
             return data_dict[key]
     return ''
 
 
-# Get data from contents
 def get_data(contents):
+    """
+    Get data from contents.
+
+    Args:
+        contents (list): List of lists containing invoice details
+
+    Returns:
+        for_month (list): List of for_month
+        do_date (list): List of do_date
+        do_no (list): List of do_no
+        description2 (list): List of description2
+        qty (list): List of qty
+    """
     for_month = list()
     do_date = list()
     do_no = list()
@@ -41,8 +82,42 @@ def get_data(contents):
     return for_month, do_date, do_no, description2, qty
 
 
-# Add data to dataframe
-def add_data(df_data, unique_rows, pricings, total_qty, for_month, do_date, do_no, description2, qty, inv_no, date, sub_total, subcon):
+def add_data(
+        df_data, 
+        unique_rows, 
+        pricings, 
+        total_qty, 
+        for_month, 
+        do_date, 
+        do_no, 
+        description2, 
+        qty, 
+        inv_no, 
+        date, 
+        sub_total, 
+        subcon
+):
+    """
+    Add data to dataframe.
+
+    Args:
+        df_data (pandas.core.frame.DataFrame): Dataframe of table
+        unique_rows (int): Number of unique rows
+        pricings (dict): Dictionary of unique descriptions and unit prices
+        total_qty (dict): Dictionary of unique descriptions and total quantities
+        for_month (list): List of for_month
+        do_date (list): List of do_date
+        do_no (list): List of do_no
+        description2 (list): List of description2
+        qty (list): List of qty
+        inv_no (str): Invoice number
+        date (str): Invoice date
+        sub_total (float): Subtotal amount
+        subcon (str): Subcon name
+
+    Returns:
+        df_data (pandas.core.frame.DataFrame): Dataframe of table
+    """
     df_data.loc[0, 'Inv No.'] = inv_no
     df_data.loc[0, 'Date'] = date
     df_data.loc[0, 'Total Amt per Inv'] = sub_total

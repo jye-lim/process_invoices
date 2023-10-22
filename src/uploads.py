@@ -1,7 +1,20 @@
+#!/usr/bin/env python
+
+####################
+# Required Modules #
+####################
+
+# Generic/Built-in
 import os
 import shutil
 import zipfile
+
+# Libs
 import streamlit as st
+
+#############
+# Functions #
+#############
 
 def unzip_file(zipped_file, upload_path):
     """

@@ -1,4 +1,15 @@
+#!/usr/bin/env python
+
+####################
+# Required Modules #
+####################
+
+# Libs
 import pandas as pd
+
+#############
+# Functions #
+#############
 
 def get_totals(contents):
     """

@@ -1,11 +1,31 @@
+#!/usr/bin/env python
+
+####################
+# Required Modules #
+####################
+
+# Libs
 import pandas as pd
 import streamlit as st
 from PyPDF2 import PdfReader
-from src.process.utils.brc_utils import get_table, complete_table
+
+# Custom
+from src.process.utils.brc_utils import complete_table, get_table
+
+#############
+# Functions #
+#############
 
 def brc_main(pdf_file_paths):
     """
     Main function for BRC.
+
+    Args:
+        pdf_file_paths (list): List of PDF file paths
+
+    Returns:
+        dfs (pandas.core.frame.DataFrame): Dataframe with extracted data
+        error_files (list): List of error files
     """
     # Initialize dataframe
     headers = ["INVOICE NO. 1", "INVOICE DATE", "TOTAL AMT", "INVOICE NO. 2", "FOR MONTH (YYYY MM)", "ZONE", "LOCATION", "SUBCON", "DATE REQ.", "ORDER REF.", "DO/NO", "DESCRIPTION", "CODE 1", "CODE 2", "QTY", "PDF SUBTOTAL"]

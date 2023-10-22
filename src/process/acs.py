@@ -1,7 +1,23 @@
+#!/usr/bin/env python
+
+####################
+# Required Modules #
+####################
+
+# Generic/Built-in
 import re
+
+# Libs
 import pandas as pd
 from PyPDF2 import PdfReader
-from src.process.utils.acs_utils import get_totals, extract_data, add_data, get_data
+
+# Custom
+from src.process.utils.acs_utils import (add_data, extract_data, get_data,
+                                         get_totals)
+
+#############
+# Functions #
+#############
 
 def acs_main(pdf_file_paths):
     """

@@ -1,12 +1,28 @@
+#!/usr/bin/env python
+
+####################
+# Required Modules #
+####################
+
+# Generic/Built-in
 import os
+
+# Libs
 import streamlit as st
 from dotenv import load_dotenv
+
+##################
+# Configurations #
+##################
 
 # Load environment variables
 load_dotenv()
 upload_path = os.getenv('UPLOAD_PATH')
 output_path = os.getenv('OUTPUT_PATH')
 
+#############
+# Functions #
+#############
 
 def initialize_session_state():
     """

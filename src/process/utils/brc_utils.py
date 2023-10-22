@@ -1,15 +1,31 @@
+#!/usr/bin/env python
+
+####################
+# Required Modules #
+####################
+
+# Generic/Built-in
 import os
+
+# Libs
 import pandas as pd
-import tabula
 import pytesseract
-from pdf2image import convert_from_path
+import tabula
 from dotenv import load_dotenv
+from pdf2image import convert_from_path
+
+##################
+# Configurations #
+##################
 
 # Load environment variables
 load_dotenv()
 pytesseract.pytesseract.tesseract_cmd = os.getenv('TESSERACT_PATH')
 poppler_path = os.getenv('POPPLER_PATH')
 
+#############
+# Functions #
+#############
 
 def add_column(table, name, val, fill=False):
     """

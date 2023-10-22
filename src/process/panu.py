@@ -1,7 +1,22 @@
+#!/usr/bin/env python
+
+####################
+# Required Modules #
+####################
+
+# Generic/Built-in
 import re
+
+# Libs
 import pandas as pd
 from PyPDF2 import PdfReader
-from src.process.utils.panu_utils import get_totals, get_data, add_data
+
+# Custom
+from src.process.utils.panu_utils import add_data, get_data, get_totals
+
+#############
+# Functions #
+#############
 
 def process_pdf(df_all, pdf_file_paths):
     """
