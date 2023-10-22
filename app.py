@@ -43,13 +43,6 @@ st.set_page_config(
 
 st.title("Extract Information from Invoices")
 
-####################
-# For testing only 
-from src.config import poppler_path, tesseract_path
-st.write(f"poppler_path: {poppler_path}")
-st.write(f"tesseract_path: {tesseract_path}")
-####################
-
 uploaded_file = st.file_uploader(
     "Upload your invoices for information extraction!",
     type=["zip", "pdf", "xlsx"],
