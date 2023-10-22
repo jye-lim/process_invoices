@@ -11,7 +11,7 @@ def acs_main(pdf_file_paths):
         pdf_file_paths (list): List of PDF file paths
 
     Returns:
-        df_all (pandas.core.frame.DataFrame): Dataframe
+        df_all (pandas.core.frame.DataFrame): Dataframe with extracted data
     """
 
     # Initialize empty dataframe

@@ -1,10 +1,13 @@
 import os
+import warnings
 import streamlit as st
 from dotenv import load_dotenv
-from src.process.acs import acs_main
+from src.process import acs_main, brc_main
+from src.session import clear_uploads, initialize_session_state
 from src.uploads import copy_uploads, show_uploads
-from src.utils import get_file_paths, dropdown_options
-from src.session import initialize_session_state, clear_uploads
+from src.utils import dropdown_options, get_file_paths
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Load environment variables
 load_dotenv()
@@ -58,7 +61,16 @@ if uploaded_file:
             st.write(f"{len(pdf_file_paths)}/{len(pdf_file_paths)} files processed successfully!")
 
         elif option == "BRC":
-            pass
+            result, error_files = brc_main(pdf_file_paths)
+
+            # Display error files if any
+            if error_files:
+                st.write("\nThe following files encountered errors during processing:")
+                for file in error_files:
+                    st.write(file)
+
+            # Display the number of files processed
+            st.write(f"\n{len(pdf_file_paths) - len(error_files)}/{len(pdf_file_paths)} files processed successfully!")
 
         elif option == "PANU":
             pass
