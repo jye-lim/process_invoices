@@ -4,24 +4,18 @@
 # Required Modules #
 ####################
 
-# Generic/Built-in
-import os
-
 # Libs
 import pandas as pd
 import pytesseract
 import tabula
-from dotenv import load_dotenv
 from pdf2image import convert_from_path
+from ...config import poppler_path, tesseract_path
 
 ##################
 # Configurations #
 ##################
 
-# Load environment variables
-load_dotenv()
-pytesseract.pytesseract.tesseract_cmd = os.getenv('TESSERACT_PATH')
-poppler_path = os.getenv('POPPLER_PATH')
+pytesseract.pytesseract.tesseract_cmd = tesseract_path
 
 #############
 # Functions #
