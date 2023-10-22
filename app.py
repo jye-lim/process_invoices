@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from src.process import acs_main, brc_main, panu_main
 from src.session import clear_uploads, initialize_session_state
 from src.uploads import copy_uploads, show_uploads
-from src.utils import dropdown_options, get_file_paths
+from src.utils import dropdown_options, get_file_paths, print_result
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -59,24 +59,16 @@ if uploaded_file:
 
         if option == "ACS":
             result = acs_main(pdf_file_paths)
-            st.write(f"{len(pdf_file_paths)}/{len(pdf_file_paths)} files processed successfully!")
+            print_result(option, len(pdf_file_paths))
 
         elif option == "BRC":
             result, error_files = brc_main(pdf_file_paths)
-
-            # Display error files if any
-            if error_files:
-                st.write("\nThe following files encountered errors during processing:")
-                for file in error_files:
-                    st.write(file)
-
-            # Display the number of files processed
-            st.write(f"\n{len(pdf_file_paths) - len(error_files)}/{len(pdf_file_paths)} files processed successfully!")
+            print_result(option, len(pdf_file_paths), error_files)
 
         elif option == "PANU":
             result = panu_main(pdf_file_paths, excel_file_paths)
             total_files = len(pdf_file_paths) + len(excel_file_paths)
-            st.write(f"{total_files}/{total_files} files processed successfully!")
+            print_result(option, total_files)
 
         elif option == "SINMIX":
             pass
