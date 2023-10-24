@@ -28,7 +28,12 @@ def brc_main(pdf_file_paths):
         error_files (list): List of error files
     """
     # Initialize dataframe
-    headers = ["INVOICE NO. 1", "INVOICE DATE", "TOTAL AMT", "INVOICE NO. 2", "FOR MONTH (YYYY MM)", "ZONE", "LOCATION", "SUBCON", "DATE REQ.", "ORDER REF.", "DO/NO", "DESCRIPTION", "CODE 1", "CODE 2", "QTY", "PDF SUBTOTAL"]
+    headers = [
+        "INVOICE NO. 1", "INVOICE DATE", "TOTAL AMT", "INVOICE NO. 2", 
+        "FOR MONTH (YYYY MM)", "ZONE", "LOCATION", "SUBCON", "DATE REQ.", 
+        "ORDER REF.", "DO/NO", "DESCRIPTION", "CODE 1", "CODE 2", "QTY", 
+        "PDF SUBTOTAL"
+    ]
     dfs = pd.DataFrame(columns=headers)
 
     # List to hold error files
