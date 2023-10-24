@@ -12,8 +12,7 @@ import pandas as pd
 from PyPDF2 import PdfReader
 
 # Custom
-from src.process.utils.acs_utils import (add_data, extract_data, get_data,
-                                         get_totals)
+from .acs_utils import add_data, extract_data, get_data, get_totals
 
 #############
 # Functions #

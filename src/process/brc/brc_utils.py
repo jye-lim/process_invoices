@@ -9,6 +9,8 @@ import pandas as pd
 import pytesseract
 import tabula
 from pdf2image import convert_from_path
+
+# Custom
 from ...config import poppler_path, tesseract_path
 
 ##################

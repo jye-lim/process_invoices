@@ -24,6 +24,16 @@ output_path = os.getenv('OUTPUT_PATH')
 # Functions #
 #############
 
+def remove_files():
+    """
+    Remove all uploaded and output files, including temporary files.
+    """
+    os.system("rm -rf {}".format(os.path.join(upload_path, "*")))
+    os.system("rm -rf {}".format(os.path.join(output_path, "*")))
+    os.system("rm -rf {}".format(os.path.join(upload_path, "._*")))
+    os.system("rm -rf {}".format(os.path.join(output_path, "._*")))
+
+
 def initialize_session_state():
     """
     Initialize session state for file uploader and uploaded files.
@@ -36,19 +46,18 @@ def initialize_session_state():
     if 'uploaded_files' not in st.session_state:
         st.session_state["uploaded_files"] = []
 
-    # Remove all uploaded and output files, including temporary files
-    os.system("rm -rf {}".format(os.path.join(upload_path, "*")))
-    os.system("rm -rf {}".format(os.path.join(output_path, "*")))
-    os.system("rm -rf {}".format(os.path.join(upload_path, "._*")))
-    os.system("rm -rf {}".format(os.path.join(output_path, "._*")))
+    # Remove all uploaded and output files
+    remove_files()
+    
 
-
-def clear_uploads():
+def next_session_state():
     """
-    Clears all uploaded files.
+    Initialize next session state for file uploader and uploaded files.
     """
     st.session_state["uploaded_files"] = []
     st.session_state["file_uploader_key"] += 1
-    os.system("rm -rf {}".format(os.path.join(upload_path, "*")))
-    os.system("rm -rf {}".format(os.path.join(upload_path, "._*")))
+
+    # Remove all uploaded and output files
+    remove_files()    
+
     st.rerun()

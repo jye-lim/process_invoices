@@ -12,7 +12,7 @@ import pandas as pd
 from PyPDF2 import PdfReader
 
 # Custom
-from src.process.utils.panu_utils import add_data, get_data, get_totals
+from .panu_utils import add_data, get_data, get_totals
 
 #############
 # Functions #

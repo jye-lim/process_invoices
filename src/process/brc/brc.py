@@ -10,7 +10,7 @@ import streamlit as st
 from PyPDF2 import PdfReader
 
 # Custom
-from src.process.utils.brc_utils import complete_table, get_table
+from .brc_utils import complete_table, get_table
 
 #############
 # Functions #

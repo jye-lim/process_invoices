@@ -12,8 +12,9 @@ import streamlit as st
 from dotenv import load_dotenv
 
 # Custom
-from src.process import acs_main, brc_main, panu_main
-from src.session import clear_uploads, initialize_session_state
+from src.download import download_xlsx, download_zip
+from src.process import acs_main, brc_main, panu_main, sinmix_main
+from src.session import initialize_session_state, next_session_state
 from src.uploads import copy_uploads, show_uploads
 from src.utils import dropdown_options, get_file_paths, print_result
 
@@ -60,9 +61,9 @@ if uploaded_file:
     # Display the list of uploaded files
     show_uploads()
 
-    # Clear uploaded files
+    # Clear all files
     if st.button("Clear uploaded files"):
-        clear_uploads()
+        next_session_state()
 
     # Get file paths of uploads
     pdf_file_paths, excel_file_paths = get_file_paths()
@@ -70,8 +71,10 @@ if uploaded_file:
     # Get option to process data from dropdown menu
     option = dropdown_options()
     
+    # Process data
     if st.button("Process"):
         result = None
+        result_zipped = False
 
         if option == "ACS":
             result = acs_main(pdf_file_paths)
@@ -79,7 +82,7 @@ if uploaded_file:
 
         elif option == "BRC":
             result, error_files = brc_main(pdf_file_paths)
-            print_result(option, len(pdf_file_paths), error_files)
+            print_result(option, len(pdf_file_paths), error_files=error_files)
 
         elif option == "PANU":
             result = panu_main(pdf_file_paths, excel_file_paths)
@@ -87,17 +90,14 @@ if uploaded_file:
             print_result(option, total_files)
 
         elif option == "SINMIX":
-            pass
+            error_dict = sinmix_main(pdf_file_paths)
+            print_result(option, len(pdf_file_paths), error_dict=error_dict)
+            result_zipped = True
 
+        # Download result in Excel format
         if result is not None:
-            result_path = os.path.join(output_path, f"{option}.xlsx")
-            result.to_excel(result_path, index=False)
+            download_xlsx(option, result)
 
-            with open(result_path, "rb") as file:
-                st.download_button(
-                    label="Download result",
-                    data=file,
-                    file_name=f"{option}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-                st.warning("Please clear the uploaded files or refresh page to process another set of files.")
+        # Download zipped file containing processed PDFs
+        if result_zipped:
+            download_zip(option)
