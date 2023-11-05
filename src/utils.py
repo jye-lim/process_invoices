@@ -73,6 +73,7 @@ def print_result(option, total_files, error_files=None, error_dict=None):
             st.write("\nThe following files encountered errors during processing:")
             for file in error_files:
                 st.write(file)
+        st.warning("If necessary, record the error files before clearing the uploaded files or refreshing page")
 
     elif option == "PANU":
         st.success(f"{total_files}/{total_files} files processed successfully!")
@@ -86,6 +87,7 @@ def print_result(option, total_files, error_files=None, error_dict=None):
             df_errors = pd.DataFrame(list(error_dict.items()), columns=["PDF", "Page"])
             st.write("\nThe following pages encountered errors during processing:")
             st.table(df_errors)
+            st.warning("If necessary, record the error files before clearing the uploaded files or refreshing page")
 
 
 def zip_pdfs(output_pdf_dir, output_filename):
