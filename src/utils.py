@@ -59,7 +59,7 @@ def print_result(option, total_files, error_files=None, error_dict=None):
     Args:
         option (str): Selected option
         total_files (int): Total number of files
-        error_count (int): Optional. Number of error files
+        error_files (list): Optional. List of error files
         error_dict (dict): Optional. Dictionary of error files and their failed pages
     """
     if option == "ACS":
