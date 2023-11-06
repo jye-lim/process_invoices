@@ -109,8 +109,8 @@ def process_pdf(df_all, pdf_file_paths):
                 if subcon is None:
                     if 'LOCATION/SITE' in lines[i].upper():
                         match = re.findall(r'\((.*?)\)', lines[i])[0]
-                        #location = match.split(' ')[0]
-                        subcon = match.split(' ')[-1]
+                        subcon = match.split(' ')[0]
+                        location = match.split(' ')[-1]
 
                 # Get invoice details
                 match = pattern.match(lines[i])
@@ -186,7 +186,7 @@ def process_pdf(df_all, pdf_file_paths):
         for_month, do_date, do_no, description2, qty = get_data(contents)
 
         # Add data to dataframe, if error, add file name and continue
-        df_data = add_data(df_data, unique_rows, pricings, total_qty, for_month, do_date, do_no, description2, qty, inv_no, date, sub_total, subcon)
+        df_data = add_data(df_data, unique_rows, pricings, total_qty, for_month, do_date, do_no, description2, qty, inv_no, date, sub_total, subcon, location)
 
         # Add empty row
         df_data.loc[total_rows] = pd.Series(dtype='object')

@@ -83,19 +83,20 @@ def get_data(contents):
 
 
 def add_data(
-        df_data, 
-        unique_rows, 
-        pricings, 
-        total_qty, 
-        for_month, 
-        do_date, 
-        do_no, 
-        description2, 
-        qty, 
-        inv_no, 
-        date, 
-        sub_total, 
-        subcon
+        df_data,
+        unique_rows,
+        pricings,
+        total_qty,
+        for_month,
+        do_date,
+        do_no,
+        description2,
+        qty,
+        inv_no,
+        date,
+        sub_total,
+        subcon,
+        location
 ):
     """
     Add data to dataframe.
@@ -114,6 +115,7 @@ def add_data(
         date (str): Invoice date
         sub_total (float): Subtotal amount
         subcon (str): Subcon name
+        location (str): Location of site
 
     Returns:
         df_data (pandas.core.frame.DataFrame): Dataframe of table
@@ -127,8 +129,8 @@ def add_data(
     df_data.loc[:unique_rows, 'Unit Rate'] = list(pricings.values())
 
     df_data['For Month (YYYY MM)'] = for_month
-    #df_data['Location'] = location
-    df_data['Zone'] = subcon
+    df_data['For TAK or Subcon? [Pintary/BBR/KKL...etc]'] = subcon
+    df_data['Zone'] = location
     df_data['DO Date'] = do_date
     df_data['DO No.'] = do_no
     df_data['Description2'] = description2
