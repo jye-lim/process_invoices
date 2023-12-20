@@ -252,11 +252,18 @@ def panu_main(pdf_file_paths, excel_file_paths):
     # Process PDF files
     df_all = process_pdf(df_all, pdf_file_paths)
 
-    # Process excel file
-    df_comments = process_excel(excel_file_paths[0])
+    # Process excel file, if any
+    if len(excel_file_paths) > 0:
+        df_comments = process_excel(excel_file_paths[0])
 
-    # Merge df_all and df_comments based on DO No.
-    df_all = pd.merge(df_all, df_comments, how='left', on='DO No.')
+        # Merge df_all and df_comments based on DO No.
+        df_all = pd.merge(df_all, df_comments, how='left', on='DO No.')
+
+    else:
+        # Add empty columns
+        df_all['Comments at Order Time'] = None
+        df_all['Comments on iPad'] = None
+        df_all['Name of Signee'] = None
 
     # Reorder columns
     df_all = df_all[[
