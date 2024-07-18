@@ -62,9 +62,11 @@ def brc_main(pdf_file_paths):
             # Append to dataframe
             dfs = pd.concat([dfs, table], ignore_index=True)
 
-        except:
+        except Exception as e:
             error_filename = f.split('/')[-1]
             error_files.append(error_filename)
+            print(f"\n{error_filename} encountered an error!")
+            print(e)
 
         # Update the Streamlit progress bar
         percent_complete = (index + 1) / len(pdf_file_paths)

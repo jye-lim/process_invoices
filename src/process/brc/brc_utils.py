@@ -121,7 +121,10 @@ def get_table(file_path):
     table.replace(to_replace=',', value='', regex=True, inplace=True)
 
     # Rename columns
-    table.rename(columns={'$ AMOUNT': 'PDF SUBTOTAL'}, inplace=True)
+    subtotal_header = '$ AMOUNT'
+    if subtotal_header not in table.columns:
+        subtotal_header = 'AMOUNT IN SGD'
+    table.rename(columns={subtotal_header: 'PDF SUBTOTAL'}, inplace=True)
 
     # Fill in blank values in DO/NO and convert to integer
     table['DO/NO'] = table['DO/NO'].ffill()
