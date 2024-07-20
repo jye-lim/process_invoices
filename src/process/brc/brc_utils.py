@@ -65,10 +65,10 @@ def get_date_req(file_path, page_no):
     lines = text.split('\n')
 
     # Get date required
-    for l in lines:
-        if "DATE REQUIRED" in l.upper():
-            loc = l.find('/')
-            date_req = l[loc-2:loc+8]
+    for line in lines:
+        if "DATE REQUIRED" in line.upper():
+            loc = line.find('/')
+            date_req = line[loc-2:loc+8]
             break
         
     return date_req
@@ -94,10 +94,8 @@ def get_table(file_path):
     while not found_total:
         if len(table_list) == 2:
             table = pd.concat([table, table_list[0]], ignore_index=True)
-            total_idx = 1
             found_total = True
         elif len(table_list[0].columns) != 9:
-            total_idx = 0
             found_total = True
         else:
             table = pd.concat([table, table_list[0]], ignore_index=True)
@@ -112,10 +110,6 @@ def get_table(file_path):
     page_req = get_date_req(file_path, page_no)
     table = add_column(table, 'DATE REQ.', page_req, fill=True)
 
-    # Get total amount in SGD
-    [total] = [table_list[total_idx].columns[i+1] for i in range(len(table_list[total_idx].columns)) if 'SGD' in table_list[total_idx].columns[i]]
-    table = add_column(table, 'TOTAL AMT', total, fill=False)
-
     # Replace values
     table.replace(to_replace=r'\r', value=' ', regex=True, inplace=True)
     table.replace(to_replace=',', value='', regex=True, inplace=True)
@@ -125,12 +119,18 @@ def get_table(file_path):
     if subtotal_header not in table.columns:
         subtotal_header = 'AMOUNT IN SGD'
     table.rename(columns={subtotal_header: 'PDF SUBTOTAL'}, inplace=True)
+    table['PDF SUBTOTAL'] = table['PDF SUBTOTAL'].astype('float64')
+
+    # Get total amount from sum of subtotals
+    total = sum(table['PDF SUBTOTAL'])
+    table = add_column(table, 'TOTAL AMT', total, fill=False)
 
     # Fill in blank values in DO/NO and convert to integer
     table['DO/NO'] = table['DO/NO'].ffill()
     table['DO/NO'] = table['DO/NO'].astype(int)
 
     # Convert QTY to 6 d.p.
+    table['QTY'] = table['QTY'].astype('float64')
     table.loc[table['QTY'] != '', 'QTY'] = pd.to_numeric(table.loc[table['QTY'] != '', 'QTY'], errors='coerce').round(6)
 
     return table
@@ -150,7 +150,7 @@ def complete_table(table, lines):
     for i in range(len(lines)):
         # Get Invoice no.
         if 'INVOICE NO' in lines[i].upper():
-            inv_no = lines[i].split(':')[-1].strip()
+            inv_no = int(lines[i].split(':')[-1].strip())
             table = add_column(table, 'INVOICE NO. 1', inv_no, fill=False)
             table = add_column(table, 'INVOICE NO. 2', inv_no, fill=True)
 
