@@ -18,20 +18,17 @@ from .acs_utils import add_data, extract_data, get_data, get_totals
 # Functions #
 #############
 
-def acs_main(pdf_file_paths):
+def process_pdf(df_all, pdf_file_paths):
     """
-    Main function for ACS.
+    Process PDF files to extract data.
 
     Args:
+        df_all (pandas.core.frame.DataFrame): Dataframe with extracted data
         pdf_file_paths (list): List of PDF file paths
 
     Returns:
         df_all (pandas.core.frame.DataFrame): Dataframe with extracted data
     """
-
-    # Initialize empty dataframe
-    df_all = None
-
     # Initialize headers
     data_headers = [
         'Ref No.', 'Date', 'Description', 'Total Qty', 'Unit', 'Unit Price', 'Subtotal Amount', 
@@ -147,5 +144,77 @@ def acs_main(pdf_file_paths):
             df_all = df_data
         else:
             df_all = pd.concat([df_all, df_data])
+
+    return df_all
+
+
+def process_excel(excel_file_path):
+    """
+    Process excel file to extract comments.
+
+    Args:
+        excel_file_path (list): Path to excel file
+
+    Returns:
+        df_comments (pandas.core.frame.DataFrame): Dataframe with extracted comments
+    """
+    # Open summary xlxs
+    df_xlsx = pd.read_excel(excel_file_path)
+
+    # Get header row
+    found_header = False
+    for i in range(len(df_xlsx)):
+        curr_row = df_xlsx.iloc[i]
+        if len(curr_row.dropna()) > 7:
+            found_header = True
+            break
+
+    # Update header
+    if found_header:
+        header_row = i + 1
+        df_xlsx = pd.read_excel(excel_file_path, header=header_row)
+    else:
+        raise ValueError("Header row not found in Excel file!")
+
+    # Change header to match extracted results from PDFs
+    df_xlsx = df_xlsx.rename(
+        columns={
+            "TICKET NUMBER": "DO No.",
+            "SITE CONTACT NO": "Contact No.",
+            "STRUCTURAL ELEMENT": "Specific Location",
+            "PURCHASER REPRESENTATIVE": "Ordered By / Remarks",
+        }
+    )
+
+    return df_xlsx
+
+
+def acs_main(pdf_file_paths, excel_file_paths):
+    """
+    Main function for ACS.
+
+    Args:
+        pdf_file_paths (list): List of PDF file paths
+        excel_file_paths (list): List of excel file paths
+
+    Returns:
+        df_all (pandas.core.frame.DataFrame): Dataframe with extracted data
+    """
+    # Initialize empty dataframe
+    df_all = None
+
+    # Process PDF files
+    df_all = process_pdf(df_all, pdf_file_paths)
+
+    # Process excel file, if any
+    if len(excel_file_paths) > 0:
+        df_xlsx = process_excel(excel_file_paths[0])
+
+        for _, row in df_xlsx.iterrows():
+            # Get results rows where DO No. matches our current row
+            mask = df_all["DO No."] == row["DO No."]
+            df_all.loc[mask, "Contact No."] = row["Contact No."]
+            df_all.loc[mask, "Specific Location"] = row["Specific Location"]
+            df_all.loc[mask, "Ordered By / Remarks"] = row["Ordered By / Remarks"]
 
     return df_all

@@ -77,7 +77,7 @@ if uploaded_file:
         result_zipped = False
 
         if option == "ACS":
-            result = acs_main(pdf_file_paths)
+            result = acs_main(pdf_file_paths, excel_file_paths)
             print_result(option, len(pdf_file_paths))
 
         elif option == "BRC":
@@ -86,8 +86,7 @@ if uploaded_file:
 
         elif option == "PANU":
             result = panu_main(pdf_file_paths, excel_file_paths)
-            total_files = len(pdf_file_paths) + len(excel_file_paths)
-            print_result(option, total_files)
+            print_result(option, len(pdf_file_paths))
 
         elif option == "SINMIX":
             error_dict = sinmix_main(pdf_file_paths)

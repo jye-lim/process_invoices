@@ -75,7 +75,7 @@ def get_data(contents):
     for sublist in contents:
         for_month.append(sublist[0])
         do_date.append(sublist[1])
-        do_no.append(sublist[2])
+        do_no.append(sublist[2].replace(" ", ""))  # Remove spacing between DO NO.
         description3.append(sublist[3])
         qty.append(sublist[4])
 
