@@ -5,6 +5,7 @@
 ####################
 
 # Libs
+import re
 import pandas as pd
 import pytesseract
 import tabula
@@ -44,9 +45,9 @@ def add_column(table, name, val, fill=False):
     return table
 
 
-def get_date_req(file_path, page_no):
+def get_scanned_data(file_path, page_no):
     """
-    Get date required from PDF.
+    Get data from scanned portion of PDF.
 
     Args:
         file_path (str): Path to PDF file
@@ -54,6 +55,7 @@ def get_date_req(file_path, page_no):
 
     Returns:
         date_req (str): Date required
+        location (str): Location of site
     """
     images = convert_from_path(file_path, poppler_path=poppler_path)
 
@@ -64,14 +66,30 @@ def get_date_req(file_path, page_no):
     text = pytesseract.image_to_string(img)
     lines = text.split('\n')
 
-    # Get date required
+    # Get date required and location
+    date_req = None
+    location = None
     for line in lines:
+        # Get date required
         if "DATE REQUIRED" in line.upper():
             loc = line.find('/')
             date_req = line[loc-2:loc+8]
+
+        # Get project location
+        if "PART OF JOB" in line.upper():
+            print(line)
+            pattern = r"PART OF JOB\s*:?\s*(.*)"
+            match = re.search(pattern, line)
+            if match:
+                location = match.group(1).strip()
+            else:
+                raise ValueError("Location not found!")
+            
+        # Exit loop once both data are found
+        if (date_req is not None) and (location is not None):
             break
         
-    return date_req
+    return date_req, location
 
 
 def get_table(file_path):
@@ -106,9 +124,10 @@ def get_table(file_path):
     drop = ['IT', 'UNIT', 'UNIT PRICE', 'PER', 'DISC.']
     table.drop(drop, axis=1, inplace=True)
 
-    # Get date required
-    page_req = get_date_req(file_path, page_no)
-    table = add_column(table, 'DATE REQ.', page_req, fill=True)
+    # Get data from scanned portion of PDF
+    date_req, location = get_scanned_data(file_path, page_no)
+    table = add_column(table, 'DATE REQ.', date_req, fill=True)
+    table = add_column(table, 'LOCATION', location, fill=True)
 
     # Replace values
     table.replace(to_replace=r'\r', value=' ', regex=True, inplace=True)
@@ -164,23 +183,18 @@ def complete_table(table, lines):
             order_ref = lines[i].split(':')[1].strip().split(' ')[0].strip()
             table = add_column(table, 'ORDER REF.', order_ref, fill=True)
 
-            if order_ref.upper() == 'SAMPLE':
-                # Get location
-                location = 'SAMPLE'
-                
-                # Get subcon
-                start = lines[i+1].find('(') + 1
-                end = lines[i+1].find(')')
-                subcon = lines[i+1][start:end]
+            if "CSBP" in order_ref.upper():                
+                subcon = "CSBP"
+                zone = "A"
+
+            elif "BBR" in order_ref.upper():
+                subcon = "BBR"
+                zone = "B"
 
             else:
-                # Get location
-                location = order_ref.split('/')[-1]
-
-                # Get subcon
-                subcon = order_ref.split('/')[1]
+                raise ValueError("Invalid order ref!")
                 
-            table = add_column(table, 'LOCATION', location, fill=True)
+            table = add_column(table, 'ZONE', zone, fill=True)
             table = add_column(table, 'SUBCON', subcon, fill=True)
 
     # Get MMMM YY
@@ -188,8 +202,7 @@ def complete_table(table, lines):
     table = add_column(table, 'FOR MONTH (YYYY MM)', mmmm_yy, fill=True)
 
     # Insert blank columns
-    table.insert(0, 'ZONE', '')
     table.insert(0, 'CODE 1', '')
-    table.insert(0, 'CODE 2', '')  
+    table.insert(0, 'CODE 2', '')
 
     return table
