@@ -77,7 +77,6 @@ def get_scanned_data(file_path, page_no):
 
         # Get project location
         if "PART OF JOB" in line.upper():
-            print(line)
             pattern = r"PART OF JOB\s*:?\s*(.*)"
             match = re.search(pattern, line)
             if match:
