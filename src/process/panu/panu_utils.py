@@ -47,13 +47,6 @@ description_pattern = re.compile(
     r'(?:.*?\b(RTD)\b)?'                               # Optionally matches "RTD"
 )
 
-# Pattern for location and subcon
-loc_subcon_pattern = re.compile(
-    r'LOCATION/SITE\s+'             # Matches the fixed text "LOCATION/SITE"
-    r'([A-Za-z\s]+ \d+)'            # Matches the location data
-    r'(?:\s*[-()]\s*([A-Za-z]+))?'  # Matches the subcon data where it can be inside a parenthesis
-)
-
 # Dictionary for different concrete grades
 grade_dict = {
     "10": "C12/10",
@@ -67,6 +60,12 @@ grade_dict = {
     "50": "C40/50",
     "55": "C45/55",
     "60": "C50/60",
+}
+
+# Dictionary of zones for each subcon
+zone_dict = {
+    "CSBP": "A",
+    "BBR": "B",
 }
 
 #############
@@ -95,26 +94,6 @@ def get_totals(contents):
             total_qty[entries[3]] += float(entries[4])
             
     return pricings, total_qty
-
-
-def get_loc_subcon(line):
-    """
-    Get the location and subcon data from an input line.
-
-    Args:
-        line (str): Single line of text from the PDF extraction
-
-    Returns:
-        location (str): Location of project
-        subcon (str): Subcon invoice
-    """
-    match = re.search(loc_subcon_pattern, line)
-    if match:
-        location = match.group(1).strip() if match.group(1) else ""
-        subcon = match.group(2).strip() if match.group(2) else ""
-
-    return location, subcon
-
 
 
 def extract_data(line, data_dict):
@@ -227,7 +206,6 @@ def add_data(
     date,
     sub_total,
     subcon,
-    location,
 ):
     """
     Add data to dataframe.
@@ -251,8 +229,6 @@ def add_data(
         date (str): Invoice date
         sub_total (float): Subtotal amount
         subcon (str): Subcon name
-        location (str): Location of site
-        code_1 (str)
 
     Returns:
         df_data (pandas.core.frame.DataFrame): Dataframe of table
@@ -267,7 +243,7 @@ def add_data(
 
     df_data["For Month (YYYY MM)"] = for_month
     df_data["For TAK or Subcon? [Pintary/BBR/KKL...etc]"] = subcon
-    df_data["Zone"] = location
+    df_data["Zone"] = zone_dict[subcon.upper()]
     df_data["DO Date"] = do_date
     df_data["DO No."] = do_no
     df_data["Description2"] = description2

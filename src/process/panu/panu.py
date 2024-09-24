@@ -12,7 +12,21 @@ import pandas as pd
 from PyPDF2 import PdfReader
 
 # Custom
-from .panu_utils import add_data, get_data, get_loc_subcon, get_totals, process_comment
+from .panu_utils import add_data, get_data, get_totals, process_comment
+
+##################
+# Configurations #
+##################
+
+# Pattern for location and subcon
+loc_subcon_pattern = re.compile(
+    r'\s*LOCATION/SITE'               # Matches the literal "LOCATION/SITE"
+    r'\s*(?P<location>[A-Z\s]+ \d+)'  # Captures the location (uppercase letters, spaces, and a number)
+    r'[\s-]*'                         # Matches optional spaces or hyphens between location and subcon
+    r'\s*(?:\([A-Za-z]+-)?'           # Non-capturing group to optionally match "(prefix-", like "(VSMC-"
+    r'\s*(?P<subcon>[A-Za-z]+)'       # Captures the subcon
+    r'\s*\)?'                         # Optionally matches a closing parenthesis
+)
 
 #############
 # Functions #
@@ -123,9 +137,10 @@ def process_pdf(df_all, pdf_file_paths):
                         date = pd.to_datetime(date, format='%d/%m/%Y').strftime('%d %b %Y')
 
                 # Get subcon and location
-                if subcon is None:
-                    if 'LOCATION/SITE' in lines[i].upper():
-                        location, subcon = get_loc_subcon(lines[i].upper())
+                match = re.search(loc_subcon_pattern, lines[i])
+                if match:
+                    location = match.group("location").strip() if not None else ""
+                    subcon = match.group("subcon").strip().upper() if not None else ""
 
                 # Get invoice details
                 match = pattern.match(lines[i])
@@ -199,7 +214,18 @@ def process_pdf(df_all, pdf_file_paths):
         df_data = df_data.reindex(range(total_rows))
         
         # Get data from contents
-        for_month, do_date, do_no, description2, qty, amount, code_1, code_2, code_3, code_4 = get_data(contents)
+        (
+            for_month,
+            do_date,
+            do_no,
+            description2,
+            qty,
+            amount,
+            code_1,
+            code_2,
+            code_3,
+            code_4,
+        ) = get_data(contents)
 
         # Add data to dataframe, if error, add file name and continue
         df_data = add_data(
@@ -221,7 +247,6 @@ def process_pdf(df_all, pdf_file_paths):
             date=date,
             sub_total=sub_total,
             subcon=subcon,
-            location=location,
         )
 
         # Add empty row
