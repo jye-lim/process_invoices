@@ -12,7 +12,7 @@ import pandas as pd
 from PyPDF2 import PdfReader
 
 # Custom
-from .panu_utils import add_data, get_data, get_totals
+from .panu_utils import add_data, get_data, get_loc_subcon, get_totals, process_comment
 
 #############
 # Functions #
@@ -31,10 +31,27 @@ def process_pdf(df_all, pdf_file_paths):
     """
     # Initialize headers
     data_headers = [
-        'Inv No.', 'Date', 'Description', 'Total Qty', 'Unit', 'Unit Rate', 'Subtotal Amount', 'Total Amt per Inv',
-        'For Month (YYYY MM)', 'Zone', 'For TAK or Subcon? [Pintary/BBR/KKL...etc]', 'DO Date', 'DO No.',
-        'Description2', 'Code1', 'Code2', 'Code3', 'Code4', 'Qty', 'Subtotal (S$)'
-        ]
+        "Inv No.",
+        "Date",
+        "Description",
+        "Total Qty",
+        "Unit",
+        "Unit Rate",
+        "Subtotal Amount",
+        "Total Amt per Inv",
+        "For Month (YYYY MM)",
+        "Zone",
+        "For TAK or Subcon? [Pintary/BBR/KKL...etc]",
+        "DO Date",
+        "DO No.",
+        "Description2",
+        "Code1",
+        "Code2",
+        "Code3",
+        "Code4",
+        "Qty",
+        "Subtotal (S$)",
+    ]
 
     # Initialize underload charges dictionary
     underload_charges = {
@@ -53,12 +70,12 @@ def process_pdf(df_all, pdf_file_paths):
 
     # Patterns to match for entries
     pattern = re.compile(
-        r'(\d{2}/\d{2}/\d{4})'                  # Date in format dd/mm/yyyy
-        r' (\d{8})'                             # 8-digit number
-        r' (.*)'                                # Any sequence of characters
-        r' ((?:\d{1,3},)*(?:\d+)(?:\.\d{2})?)'  # Number with optional comma separators and optional two decimal points
-        r' (\d{1,3}(,\d{3})*|^\d+)(\.\d+)?'     # Number with optional comma separators and optional decimal points
-        r' (\d{1,3}(,\d{3})*|^\d+)(\.\d+)?'     # Another number with similar format
+        r'(\d{2}/\d{2}/\d{4})\s+'                  # Date in format dd/mm/yyyy
+        r'(\d{8})\s+'                              # 8-digit number
+        r'(.*?)\s+'                                # Non-greedy match for any text (e.g., GR 40 SL 160-210MM 4HR RTD)
+        r'((?:\d{1,3},)*(?:\d+)(?:\.\d{2})?)\s+'   # First number with comma and optional two decimal places (e.g., 9.00)
+        r'((?:\d{1,3},)*(?:\d+)(?:\.\d{2})?)\s+'   # Second number with comma and optional two decimal places (e.g., 101.00)
+        r'((?:\d{1,3},)*(?:\d+)(?:\.\d{2})?)'      # Third number with comma and optional two decimal places (e.g., 909.00)
     )
 
     split_pattern1 = re.compile(
@@ -108,9 +125,7 @@ def process_pdf(df_all, pdf_file_paths):
                 # Get subcon and location
                 if subcon is None:
                     if 'LOCATION/SITE' in lines[i].upper():
-                        match = re.findall(r'\((.*?)\)', lines[i])[0]
-                        subcon = match.split(' ')[0]
-                        location = match.split(' ')[-1]
+                        location, subcon = get_loc_subcon(lines[i].upper())
 
                 # Get invoice details
                 match = pattern.match(lines[i])
@@ -120,24 +135,25 @@ def process_pdf(df_all, pdf_file_paths):
                     do_line = list(match.groups())
                     do_mth = pd.to_datetime(do_line[0], format='%d/%m/%Y').strftime('%Y %m')
                     do_date = pd.to_datetime(do_line[0], format='%d/%m/%Y').strftime('%d %b %Y')
-                    do_no = do_line[1]
+                    do_no = int(do_line[1])
                     do_desc = do_line[2]
                     do_qty = do_line[3]
                     do_unitprice = do_line[4]
-
+                    do_invoice_amt = float(do_line[5].replace(",", ""))
+                    
                     # Check if underload
                     if '*' in do_desc:
                         # Add entry without underload
                         do_desc = do_desc.replace('*', '')
                         do_desc = do_desc.strip()
-                        contents.append([do_mth, do_date, do_no, do_desc, do_qty, do_unitprice])
+                        contents.append([do_mth, do_date, do_no, do_desc, do_qty, do_unitprice, do_invoice_amt])
 
                         # Add entry with underload
                         do_desc = do_desc + f' - UNDERLOAD CHARGES - {float(do_qty)}m3'
                         do_unitprice = underload_charges[float(do_qty)]
                         do_qty = '1'
 
-                    contents.append([do_mth, do_date, do_no, do_desc, do_qty, do_unitprice])
+                    contents.append([do_mth, do_date, do_no, do_desc, do_qty, do_unitprice, do_invoice_amt])
 
                 elif split_match2:
                     split_match1 = split_pattern1.match(lines[i-1])
@@ -181,12 +197,32 @@ def process_pdf(df_all, pdf_file_paths):
         unique_rows = len(pricings.keys())-1
         total_rows = len(contents)
         df_data = df_data.reindex(range(total_rows))
-
+        
         # Get data from contents
-        for_month, do_date, do_no, description2, qty = get_data(contents)
+        for_month, do_date, do_no, description2, qty, amount, code_1, code_2, code_3, code_4 = get_data(contents)
 
         # Add data to dataframe, if error, add file name and continue
-        df_data = add_data(df_data, unique_rows, pricings, total_qty, for_month, do_date, do_no, description2, qty, inv_no, date, sub_total, subcon, location)
+        df_data = add_data(
+            df_data=df_data,
+            unique_rows=unique_rows,
+            pricings=pricings,
+            total_qty=total_qty,
+            for_month=for_month,
+            do_date=do_date,
+            do_no=do_no,
+            description2=description2,
+            qty=qty,
+            amount=amount,
+            code_1=code_1,
+            code_2=code_2,
+            code_3=code_3,
+            code_4=code_4,
+            inv_no=inv_no,
+            date=date,
+            sub_total=sub_total,
+            subcon=subcon,
+            location=location,
+        )
 
         # Add empty row
         df_data.loc[total_rows] = pd.Series(dtype='object')
@@ -210,22 +246,31 @@ def process_excel(excel_file_path):
     Returns:
         df_comments (pandas.core.frame.DataFrame): Dataframe with extracted comments
     """
+    # Read the first few rows to inspect and find header row
+    sample_rows = pd.read_excel(excel_file_path, nrows=20)  # Read first 20 rows as sample
+
+    # Iterate through the rows to detect the header
+    for i, row in sample_rows.iterrows():
+        if all(col in row.values for col in ["DO No", "Comments at Order Time", "Name of signee"]):
+            header_row = i + 1
+            break
+
     # Open summary xlxs
-    df_xlsx = pd.read_excel(excel_file_path)
+    df_xlsx = pd.read_excel(excel_file_path, header=header_row)
+    
+    # Extract data from "Comments at Order Time" column
+    extracted_data = df_xlsx["Comments at Order Time"].apply(process_comment)
 
-    # Get data from summary xlsx
-    xlsx_do_no = df_xlsx.iloc[:, 4]
-    xlsx_comments_order = df_xlsx.iloc[:, 16]
-    xlsx_comments_ipad = df_xlsx.iloc[:, 17]
-    xlsx_signee = df_xlsx.iloc[:, 18]
-
-    # Put extracted data into new df
+    # Make a new dataframe to store the extracted data from comments
     df_comments = pd.DataFrame({
-        'DO No.': xlsx_do_no,
-        'Comments at Order Time': xlsx_comments_order,
-        'Comments on iPad': xlsx_comments_ipad,
-        'Name of Signee': xlsx_signee
-        })
+        "Purchaser Personnel Name & Contact": extracted_data[0],
+        "Bored Pile No.: OR Location ***": extracted_data[1],
+        "LP": extracted_data[2],
+        "Gate No.": extracted_data[3],
+        "Comments at Order Time": df_xlsx["Comments at Order Time"],
+        "DO No.": df_xlsx["DO No"],
+        "Name of signee": df_xlsx["Name of signee"]
+    })
 
     # Remove NaN rows and header
     df_comments = df_comments.dropna(subset=['DO No.'])
@@ -261,15 +306,47 @@ def panu_main(pdf_file_paths, excel_file_paths):
 
     else:
         # Add empty columns
+        df_all["Purchaser Personnel Name & Contact"] = None
+        df_all["Bored Pile No.: OR Location ***"] = None
+        df_all["LP"] = None
+        df_all["Gate No."] = None
         df_all['Comments at Order Time'] = None
-        df_all['Comments on iPad'] = None
-        df_all['Name of Signee'] = None
+        df_all['Name of signee'] = None
+
+    # Add empty column for future use
+    df_all["Size"] = None
 
     # Reorder columns
-    df_all = df_all[[
-        'Inv No.', 'Date', 'Description', 'Total Qty', 'Unit', 'Unit Rate', 'Subtotal Amount', 'Total Amt per Inv', 'For Month (YYYY MM)',
-        'Zone', 'Comments at Order Time', 'Comments on iPad', 'Name of Signee', 'For TAK or Subcon? [Pintary/BBR/KKL...etc]', 'DO Date', 
-        'DO No.', 'Description2', 'Code1', 'Code2', 'Code3', 'Code4', 'Qty', 'Subtotal (S$)'
-        ]]
+    df_all = df_all[
+        [
+            "Inv No.",
+            "Date",
+            "Description",
+            "Total Qty",
+            "Unit",
+            "Unit Rate",
+            "Subtotal Amount",
+            "Total Amt per Inv",
+            "For Month (YYYY MM)",
+            "Zone",
+            "Comments at Order Time",
+            "Purchaser Personnel Name & Contact",
+            "LP",
+            "Gate No.",
+            "Name of signee",
+            "Bored Pile No.: OR Location ***",
+            "Size",
+            "For TAK or Subcon? [Pintary/BBR/KKL...etc]",
+            "DO Date",
+            "DO No.",
+            "Description2",
+            "Code1",
+            "Code2",
+            "Code3",
+            "Code4",
+            "Qty",
+            "Subtotal (S$)",
+        ]
+    ]
 
     return df_all
