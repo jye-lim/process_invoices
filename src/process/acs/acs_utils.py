@@ -102,8 +102,9 @@ def extract_description(desc):
     if match:
         duration = match.group("duration") if not None else ""
         rtd = match.group("rtd") if not None else ""
-    if "R" not in duration:
-        duration = duration.upper() + "R"
+    
+        if (rtd is not None) and ("R" not in duration):
+            duration = duration.upper() + "R"
     
     return rtd, duration
 
