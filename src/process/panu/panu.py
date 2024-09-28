@@ -167,6 +167,7 @@ def process_pdf(df_all, pdf_file_paths):
                         do_desc = do_desc + f' - UNDERLOAD CHARGES - {float(do_qty)}m3'
                         do_unitprice = underload_charges[float(do_qty)]
                         do_qty = '1'
+                        do_invoice_amt = ""
 
                     contents.append([do_mth, do_date, do_no, do_desc, do_qty, do_unitprice, do_invoice_amt])
 

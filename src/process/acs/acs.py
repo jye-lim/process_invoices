@@ -134,7 +134,7 @@ def process_pdf(df_all, pdf_file_paths):
                         previous[3] + f' - UNDERLOAD CHARGES - {float(previous[4])}m3',
                         '1',
                         lines[i].split(' ')[-1],
-                        previous[-1],
+                        lines[i].split(' ')[-1],
                     ]
                     contents.append(underload)
 
