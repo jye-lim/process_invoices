@@ -36,8 +36,8 @@ def get_file_paths():
         excel_file_paths (list): List of Excel file paths
     """
     file_paths = glob.glob(os.path.join(upload_path, "*"))
-    pdf_file_paths = [file for file in file_paths if file.endswith('.pdf')]
-    excel_file_paths = [file for file in file_paths if file.endswith('.xlsx')]
+    pdf_file_paths = [file for file in file_paths if file.lower().endswith(".pdf")]
+    excel_file_paths = [file for file in file_paths if file.lower().endswith('.xlsx')]
     return pdf_file_paths, excel_file_paths
 
 
