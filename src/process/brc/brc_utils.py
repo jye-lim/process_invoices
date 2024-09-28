@@ -4,8 +4,10 @@
 # Required Modules #
 ####################
 
-# Libs
+# Generic/Built-in
 import re
+
+# Libs
 import pandas as pd
 import pytesseract
 import tabula
