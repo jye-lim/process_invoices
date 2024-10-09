@@ -22,9 +22,9 @@ start_pattern = re.compile(
 )
 
 pile_pattern = re.compile(
-    r'.*?'                               # Matches any content before pile
-    r'(?P<pile>[CcFfPp]?\s*-?\s*\d{3})'  # Captures the pile (C/P optional, followed by 3 digits)
-    r'.*'                                # Matches any content after pile
+    r'\b'                                # Word boundary to avoid partial matches
+    r'(?P<pile>[CcFfPp]?\s*-?\s*\d{3})'  # Captures the pile (C/P/F optional, followed by 3 digits)
+    r'\b'                                # Word boundary to ensure it's a separate word/pattern
 )
 
 lp_pattern = re.compile(
