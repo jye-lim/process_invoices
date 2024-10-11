@@ -126,7 +126,7 @@ def get_scanned_data(image):
     return inv_no, do_date, subtotal
 
 
-def fill_missing_entries(info_list, start_indices, end_indices, filename="DO"):
+def fill_missing_entries(info_list, start_indices, end_indices):
     """
     Fills in missing entries based on its DO's start and end indices.
     Performs a forward pass, before a backward pass, to check
@@ -135,7 +135,6 @@ def fill_missing_entries(info_list, start_indices, end_indices, filename="DO"):
         info_list (list): List of information where some entries may be None.
         start_indices (list): List of index that indicates the start of the DO.
         end_indices (list): List of index that indicates the end of the DO.
-        filename (str): Optional, so that error file can be identified.
     
     Returns:
         info_list (list): Updated list with missing entries filled in.
@@ -151,10 +150,6 @@ def fill_missing_entries(info_list, start_indices, end_indices, filename="DO"):
             majority_entry = max(set(entry_valid), key=entry_valid.count)
             for i in range(start, end + 1):
                 info_list[i] = majority_entry
-                
-        else:
-            
-            st.write(f"No entry found in {filename} from page {start + 1} to {end + 1}.")
 
     return info_list
 
@@ -237,9 +232,8 @@ def get_scanned_info(file_path):
     end_indices = subtotal_positions
 
     # Fill any missing entries
-    filename = os.path.basename(file_path)
-    inv_no_list = fill_missing_entries(inv_no_list, start_indices, end_indices, filename=filename)
-    do_date_list = fill_missing_entries(do_date_list, start_indices, end_indices, filename=filename)
+    inv_no_list = fill_missing_entries(inv_no_list, start_indices, end_indices)
+    do_date_list = fill_missing_entries(do_date_list, start_indices, end_indices)
 
     return start_indices, end_indices, inv_no_list, do_date_list
 
@@ -304,6 +298,12 @@ def get_scanned_tables(file_path):
         ]
         for col in new_cols:
             df_do = add_nan_col(df_do, col)
+
+        # If no data extracted, continue to next DO
+        if do_date_list[start] is None or (inv_no_list[start] is None):
+            filename = os.path.basename(file_path)
+            st.write(f"No entry found in {filename} from page {start + 1} to {end + 1}.")
+            continue
 
         # Update NaN columns
         formatted_date = pd.to_datetime(do_date_list[start], dayfirst=True).strftime("%d %b %Y")
