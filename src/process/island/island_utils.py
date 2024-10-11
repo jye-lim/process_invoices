@@ -5,7 +5,6 @@
 ####################
 
 # Generic/Built-in
-import time
 import os
 import re
 
@@ -304,7 +303,6 @@ def get_scanned_tables(file_path):
         if pd.isna(do_date_list[start]) or pd.isna(inv_no_list[start]):
             filename = os.path.basename(file_path)
             st.write(f"No entry found in {filename} from page {start + 1} to {end + 1}.")
-            time.sleep(2)
             continue
 
         # Update NaN columns
