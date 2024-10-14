@@ -259,6 +259,14 @@ def get_scanned_tables(file_path):
         do_pages = [i for i in range(start + 1, end + 2)]  # Page index starts from 1
         df_list = tabula.read_pdf(file_path, pages=do_pages)
         df_list = [df.dropna(axis=1, how="all") for df in df_list]
+        
+        # If no valid data extracted, continue to next DO
+        if pd.isna(do_date_list[start]) or pd.isna(inv_no_list[start]) or len(df_list) == 0:
+            filename = os.path.basename(file_path)
+            st.write(f"No entry found in {filename} from page {start + 1} to {end + 1}.")
+            continue
+
+        # Stack dataframes in list together
         df_do = pd.DataFrame(np.vstack([df.values for df in df_list]), columns=df_list[0].columns)
 
         # Set date in MMMM YY format
@@ -298,12 +306,6 @@ def get_scanned_tables(file_path):
         ]
         for col in new_cols:
             df_do = add_nan_col(df_do, col)
-
-        # If no data extracted, continue to next DO
-        if pd.isna(do_date_list[start]) or pd.isna(inv_no_list[start]):
-            filename = os.path.basename(file_path)
-            st.write(f"No entry found in {filename} from page {start + 1} to {end + 1}.")
-            continue
 
         # Update NaN columns
         formatted_date = pd.to_datetime(do_date_list[start], dayfirst=True).strftime("%d %b %Y")
