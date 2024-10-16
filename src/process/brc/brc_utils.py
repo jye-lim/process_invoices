@@ -192,8 +192,25 @@ def complete_table(table, lines):
                 subcon = "BBR"
                 zone = "B"
 
+            elif "HCPL" in order_ref.upper():
+                subcon = "Hsuen Chow"
+                zone = ""
+
+            elif "CT" in order_ref.upper():
+                subcon = "CT"
+                zone = ""
+
+            elif "CLC" in order_ref.upper():
+                subcon = "CLC"
+                zone = ""
+
+            elif ("SCB" in order_ref.upper()) or ("SCE" in order_ref.upper()):
+                subcon = "SIONG"
+                zone = ""
+
             else:
-                raise ValueError("Invalid order ref!")
+                subcon = order_ref.upper()
+                zone = ""
                 
             table = add_column(table, 'ZONE', zone, fill=True)
             table = add_column(table, 'SUBCON', subcon, fill=True)
