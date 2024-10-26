@@ -14,9 +14,7 @@ from dotenv import load_dotenv
 from pdf2image import convert_from_path
 
 # Custom
-from .sinmix_utils import (extract_text_from_page, find_do_number, 
-                           save_page_as_pdf)
-
+from .sinmix_utils import extract_text_from_page, find_do_number, save_page_as_pdf
 from ...config import poppler_path, tesseract_path
 
 ##################
