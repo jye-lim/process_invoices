@@ -62,7 +62,7 @@ def print_result(option, total_files, error_files=None, error_dict=None):
         error_files (list): Optional. List of error files
         error_dict (dict): Optional. Dictionary of error files and their failed pages
     """
-    if option == "ACS":
+    if (option == "ACS") or (option == "PANU") or (option == "ISLAND"):
         st.success(f"{total_files}/{total_files} files processed successfully!")
 
     elif option == "BRC":
@@ -74,9 +74,6 @@ def print_result(option, total_files, error_files=None, error_dict=None):
             for file in error_files:
                 st.write(file)
         st.warning("If necessary, record the error files before clearing the uploaded files or refreshing page")
-
-    elif option == "PANU":
-        st.success(f"{total_files}/{total_files} files processed successfully!")
 
     elif option == "SINMIX":
         st.success(f"{total_files - len(error_dict)}/{total_files} files processed successfully!")
