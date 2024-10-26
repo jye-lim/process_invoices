@@ -62,7 +62,7 @@ def print_result(option, total_files, error_files=None, error_dict=None):
         error_files (list): Optional. List of error files
         error_dict (dict): Optional. Dictionary of error files and their failed pages
     """
-    if (option == "ACS") or (option == "PANU") or (option == "ISLAND"):
+    if (option == "ACS") or (option == "GW") or (option == "ISLAND") or (option == "PANU"):
         st.success(f"{total_files}/{total_files} files processed successfully!")
 
     elif option == "BRC":

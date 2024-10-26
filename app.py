@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 
 # Custom
 from src.download import download_xlsx, download_zip
-from src.process import acs_main, brc_main, island_main, panu_main, sinmix_main
+from src.process import acs_main, brc_main, gw_main, island_main, panu_main, sinmix_main
 from src.session import initialize_session_state, next_session_state
 from src.uploads import copy_uploads, show_uploads
 from src.utils import dropdown_options, get_file_paths, print_result
@@ -83,6 +83,10 @@ if uploaded_file:
         elif option == "BRC":
             result, error_files = brc_main(pdf_file_paths)
             print_result(option, len(pdf_file_paths), error_files=error_files)
+
+        elif option == "GW":
+            result = gw_main(pdf_file_paths)
+            print_result(option, len(pdf_file_paths))
 
         elif option == "ISLAND":
             result = island_main(pdf_file_paths, excel_file_paths)
