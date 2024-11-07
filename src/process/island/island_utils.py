@@ -186,6 +186,10 @@ def extract_description(desc):
         rtd (str): RTD if retardant was used, else ""
         duration (str): Duration of retardation
     """
+    # If description is not a string, return None
+    if not isinstance(desc, str):
+        return None, None, None, None
+    
     match = re.search(desc_pattern, desc)
     if match:
         gde = match.group("grade") if not None else None
@@ -321,8 +325,13 @@ def get_scanned_tables(file_path):
         total_amt = 0
         unique_desc = df_do["Description2"].unique()
         for i, desc in enumerate(unique_desc):
-            # Get data
             filtered_df = df_do[df_do["Description2"] == desc]
+
+            # Skip if empty
+            if len(filtered_df) == 0:
+                continue
+
+            # Get summary
             total_qty = filtered_df["Qty"].sum()
             unit = filtered_df["Unit"].values[0]
             unit_rate = filtered_df["Unit Rate"].mean()
