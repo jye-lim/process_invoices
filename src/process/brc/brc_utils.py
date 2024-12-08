@@ -6,6 +6,7 @@
 
 # Generic/Built-in
 import re
+from datetime import datetime
 
 # Libs
 import pandas as pd
@@ -26,6 +27,7 @@ pytesseract.pytesseract.tesseract_cmd = tesseract_path
 # Functions #
 #############
 
+
 def add_column(table, name, val, fill=False):
     """
     Insert column with specified name and value at first row only.
@@ -42,7 +44,7 @@ def add_column(table, name, val, fill=False):
     if fill:
         table.insert(0, name, val)
     else:
-        table.insert(0, name, '')
+        table.insert(0, name, "")
         table.at[0, name] = val
     return table
 
@@ -62,11 +64,11 @@ def get_scanned_data(file_path, page_no):
     images = convert_from_path(file_path, poppler_path=poppler_path)
 
     # Convert image to grayscale
-    img = images[page_no].convert('L')
+    img = images[page_no].convert("L")
 
     # Perform OCR using pytesseract
     text = pytesseract.image_to_string(img)
-    lines = text.split('\n')
+    lines = text.split("\n")
 
     # Get date required and location
     date_req = None
@@ -74,8 +76,8 @@ def get_scanned_data(file_path, page_no):
     for line in lines:
         # Get date required
         if "DATE REQUIRED" in line.upper():
-            loc = line.find('/')
-            date_req = line[loc-2:loc+8]
+            loc = line.find("/")
+            date_req = line[loc - 2 : loc + 8]
 
         # Get project location
         if "PART OF JOB" in line.upper():
@@ -85,11 +87,11 @@ def get_scanned_data(file_path, page_no):
                 location = match.group(1).strip()
             else:
                 raise ValueError("Location not found!")
-            
+
         # Exit loop once both data are found
         if (date_req is not None) and (location is not None):
             break
-        
+
     return date_req, location
 
 
@@ -122,36 +124,47 @@ def get_table(file_path):
             table_list = tabula.read_pdf(file_path, pages=page_no)
 
     # Drop unwanted columns
-    drop = ['IT', 'UNIT', 'UNIT PRICE', 'PER', 'DISC.']
+    drop = ["IT", "DISC."]
     table.drop(drop, axis=1, inplace=True)
 
     # Get data from scanned portion of PDF
     date_req, location = get_scanned_data(file_path, page_no)
-    table = add_column(table, 'DATE REQ.', date_req, fill=True)
-    table = add_column(table, 'LOCATION', location, fill=True)
+    if (date_req is not None) and (date_req.strip() != ""):
+        date_req_object = datetime.strptime(date_req, "%d/%m/%Y")
+        date_req = date_req_object.strftime("%d-%b-%y")
+    table = add_column(table, "DATE REQ.", date_req, fill=True)
+    table = add_column(table, "LOCATION", location, fill=True)
 
     # Replace values
-    table.replace(to_replace=r'\r', value=' ', regex=True, inplace=True)
-    table.replace(to_replace=',', value='', regex=True, inplace=True)
+    table.replace(to_replace=r"\r", value=" ", regex=True, inplace=True)
+    table.replace(to_replace=",", value="", regex=True, inplace=True)
 
     # Rename columns
-    subtotal_header = '$ AMOUNT'
+    subtotal_header = "$ AMOUNT"
     if subtotal_header not in table.columns:
-        subtotal_header = 'AMOUNT IN SGD'
-    table.rename(columns={subtotal_header: 'PDF SUBTOTAL'}, inplace=True)
-    table['PDF SUBTOTAL'] = table['PDF SUBTOTAL'].astype('float64')
+        subtotal_header = "AMOUNT IN SGD"
+    table.rename(
+        columns={
+            "UNIT PRICE": "VENDOR INVOICE UNIT PRICE (S$)",
+            subtotal_header: "PDF SUBTOTAL",
+        },
+        inplace=True,
+    )
+    table["PDF SUBTOTAL"] = table["PDF SUBTOTAL"].astype("float64")
 
     # Get total amount from sum of subtotals
-    total = sum(table['PDF SUBTOTAL'])
-    table = add_column(table, 'TOTAL AMT', total, fill=False)
+    total = sum(table["PDF SUBTOTAL"])
+    table = add_column(table, "TOTAL AMT", total, fill=False)
 
     # Fill in blank values in DO/NO and convert to integer
-    table['DO/NO'] = table['DO/NO'].ffill()
-    table['DO/NO'] = table['DO/NO'].astype(int)
+    table["DO/NO"] = table["DO/NO"].ffill()
+    table["DO/NO"] = table["DO/NO"].astype(int)
 
     # Convert QTY to 6 d.p.
-    table['QTY'] = table['QTY'].astype('float64')
-    table.loc[table['QTY'] != '', 'QTY'] = pd.to_numeric(table.loc[table['QTY'] != '', 'QTY'], errors='coerce').round(6)
+    table["QTY"] = table["QTY"].astype("float64")
+    table.loc[table["QTY"] != "", "QTY"] = pd.to_numeric(
+        table.loc[table["QTY"] != "", "QTY"], errors="coerce"
+    ).round(6)
 
     return table
 
@@ -167,24 +180,26 @@ def complete_table(table, lines):
     Returns:
         table (pandas.core.frame.DataFrame): Dataframe of table with all other required variables
     """
-    for i in range(len(lines)):
+    for i, _ in enumerate(lines):
         # Get Invoice no.
-        if 'INVOICE NO' in lines[i].upper():
-            inv_no = int(lines[i].split(':')[-1].strip())
-            table = add_column(table, 'INVOICE NO. 1', inv_no, fill=False)
-            table = add_column(table, 'INVOICE NO. 2', inv_no, fill=True)
+        if "INVOICE NO" in lines[i].upper():
+            inv_no = int(lines[i].split(":")[-1].strip())
+            table = add_column(table, "INVOICE NO. 1", inv_no, fill=False)
+            table = add_column(table, "INVOICE NO. 2", inv_no, fill=True)
 
         # Get Invoice date
-        if ('DATE' in lines[i].upper()) and ('DUE' not in lines[i].upper()):
-            inv_date = lines[i].split(':')[-1].strip()
-            table = add_column(table, 'INVOICE DATE', inv_date, fill=False)
+        if ("DATE" in lines[i].upper()) and ("DUE" not in lines[i].upper()):
+            inv_date_str = lines[i].split(":")[-1].strip()
+            date_object = datetime.strptime(inv_date_str, "%d-%b-%y")
+            inv_date = date_object.strftime("%d-%b-%y")
+            table = add_column(table, "INVOICE DATE", inv_date, fill=False)
 
         # Get Order ref. no.
-        if 'CUSTOMER ORDER REF' in lines[i].upper():
-            order_ref = lines[i].split(':')[1].strip().split(' ')[0].strip()
-            table = add_column(table, 'ORDER REF.', order_ref, fill=True)
+        if "CUSTOMER ORDER REF" in lines[i].upper():
+            order_ref = lines[i].split(":")[1].strip().split(" ")[0].strip()
+            table = add_column(table, "ORDER REF.", order_ref, fill=True)
 
-            if "CSBP" in order_ref.upper():                
+            if "CSBP" in order_ref.upper():
                 subcon = "CSBP"
                 zone = "A"
 
@@ -211,16 +226,16 @@ def complete_table(table, lines):
             else:
                 subcon = order_ref.upper()
                 zone = ""
-                
-            table = add_column(table, 'ZONE', zone, fill=True)
-            table = add_column(table, 'SUBCON', subcon, fill=True)
+
+            table = add_column(table, "ZONE", zone, fill=True)
+            table = add_column(table, "SUBCON", subcon, fill=True)
 
     # Get MMMM YY
-    mmmm_yy = pd.to_datetime(inv_date).strftime('%Y %m')
-    table = add_column(table, 'FOR MONTH (YYYY MM)', mmmm_yy, fill=True)
+    mmmm_yy = pd.to_datetime(inv_date).strftime("%Y %m")
+    table = add_column(table, "FOR MONTH (YYYY MM)", mmmm_yy, fill=True)
 
     # Insert blank columns
-    table.insert(0, 'CODE 1', '')
-    table.insert(0, 'CODE 2', '')
+    table.insert(0, "CODE 1", "")
+    table.insert(0, "CODE 2", "")
 
     return table

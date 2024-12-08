@@ -16,6 +16,7 @@ from .brc_utils import complete_table, get_table
 # Functions #
 #############
 
+
 def brc_main(pdf_file_paths):
     """
     Main function for BRC.
@@ -44,6 +45,9 @@ def brc_main(pdf_file_paths):
         "CODE 1",
         "CODE 2",
         "QTY",
+        "UNIT",
+        "VENDOR INVOICE UNIT PRICE (S$)",
+        "PER",
         "PDF SUBTOTAL",
     ]
     dfs = pd.DataFrame(columns=headers)
@@ -61,10 +65,10 @@ def brc_main(pdf_file_paths):
         table = get_table(f)
 
         # Get other variables of interest and add it to table
-        pdf_file = PdfReader(open(f, 'rb'))
+        pdf_file = PdfReader(open(f, "rb"))
         page = pdf_file.pages[0]
         text = page.extract_text()
-        lines = text.split('\n')
+        lines = text.split("\n")
         table = complete_table(table, lines)
 
         # Sort table columns
@@ -76,6 +80,8 @@ def brc_main(pdf_file_paths):
         # Update the Streamlit progress bar
         percent_complete = (index + 1) / len(pdf_file_paths)
         progress.progress(percent_complete)
-        status_text.text(f"Processed: {index + 1}/{len(pdf_file_paths)} files ({int(percent_complete*100)}% complete)")
+        status_text.text(
+            f"Processed: {index + 1}/{len(pdf_file_paths)} files ({int(percent_complete*100)}% complete)"
+        )
 
     return dfs, error_files
