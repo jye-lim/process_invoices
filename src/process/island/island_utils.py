@@ -260,10 +260,10 @@ def get_scanned_tables(file_path):
 
     for start, end in zip(start_indices, end_indices):
         # Get all dataframes for the same DO and combine them
-        do_pages = [i for i in range(start + 1, end + 2)]  # Page index starts from 1
+        do_pages = list(range(start + 1, end + 2))  # Page index starts from 1
         df_list = tabula.read_pdf(file_path, pages=do_pages)
         df_list = [df.dropna(axis=1, how="all") for df in df_list]
-        
+
         # If no valid data extracted, continue to next DO
         if pd.isna(do_date_list[start]) or pd.isna(inv_no_list[start]) or len(df_list) == 0:
             filename = os.path.basename(file_path)
@@ -275,7 +275,7 @@ def get_scanned_tables(file_path):
 
         # Set date in MMMM YY format
         df_do.iloc[:, 0] = pd.to_datetime(df_do.iloc[:, 0], dayfirst=True).dt.strftime('%Y %m')
-        
+
         # Set column headers
         df_do.columns = [
             "For Month (YYYY MM)",
@@ -298,7 +298,7 @@ def get_scanned_tables(file_path):
 
         # Calculate vendor invoice amount
         df_do["Vendor Invoice Amount"] = df_do["Unit Rate"] * df_do["Qty"]
-        
+
         # Add NaN columns. Use object type to contain NaNs.
         new_cols = [
             "Inv No.",
