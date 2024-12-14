@@ -20,12 +20,13 @@ from .panu_utils import add_data, get_data, get_totals, process_comment
 
 # Pattern for location and subcon
 loc_subcon_pattern = re.compile(
-    r'\s*LOCATION/SITE'               # Matches the literal "LOCATION/SITE"
-    r'\s*(?P<location>[A-Z\s]+ \d+)'  # Captures the location (uppercase letters, spaces, and a number)
-    r'[\s-]*'                         # Matches optional spaces or hyphens between location and subcon
-    r'\s*(?:\([A-Za-z]+-)?'           # Non-capturing group to optionally match "(prefix-", like "(VSMC-"
-    r'\s*(?P<subcon>[A-Za-z]+)'       # Captures the subcon
-    r'\s*\)?'                         # Optionally matches a closing parenthesis
+    r'\s*LOCATION/SITE'                     # Matches the literal "LOCATION/SITE"
+    r'\s*(?P<location>[A-Z\s]+ \d+)'        # Captures the location (uppercase letters, spaces, and a number)
+    r'[\s-]*'                               # Matches optional spaces or hyphens between location and subcon
+    r'\s*\((?:[A-Za-z]+-)?'                 # Non-capturing group to optionally match "(prefix-", like "(VSMC-"
+    r'\s*(?P<subcon>[A-Za-z\s]+)'           # Captures the subcon (allows spaces in the name)
+    r'(?:\s*-\s*(?P<building>[A-Za-z\s]+))?' # Optionally matches a dash and captures the building name
+    r'\s*\)?'                               # Matches optional closing parenthesis
 )
 
 #############
@@ -53,18 +54,24 @@ def process_pdf(df_all, pdf_file_paths):
         "Unit Rate",
         "Subtotal Amount",
         "Total Amt per Inv",
+        "Invoice No.",
         "For Month (YYYY MM)",
+        "Location/Site",
         "Zone",
-        "For TAK or Subcon? [Pintary/BBR/KKL...etc]",
+        "Building",
+        "Subcons",
         "DO Date",
         "DO No.",
         "Description2",
-        "Code1",
-        "Code2",
-        "Code3",
-        "Code4",
+        "Conc. Grade",
+        "Conc. Slump",
+        "Admix. 1",
+        "Admix. 2",
+        "Admix. 3",
         "Qty",
+        "Vendor Invoice Unit Rate (S$)",
         "Subtotal (S$)",
+        "Calculated Subtotal (S$)",
     ]
 
     # Initialize underload charges dictionary
@@ -116,35 +123,33 @@ def process_pdf(df_all, pdf_file_paths):
         ref_no = None
         date = None
         subcon = None
-        contents = list()
+        contents = []
 
         # Iterate through pages
-        for p in range(len(pdf_file.pages)):
-            page = pdf_file.pages[p]
+        for _, page in enumerate(pdf_file.pages):
             text = page.extract_text()
             lines = text.split('\n')
 
-            for i in range(len(lines)):
+            for i, line in enumerate(lines):
                 # Get reference number
-                if ref_no is None:
-                    if 'INVOICE NO' in lines[i].upper():
-                        inv_no = re.search(r'\d{9}', lines[i+1])[0]
+                if ref_no is None and 'INVOICE NO' in line.upper():
+                    inv_no = re.search(r'\d{9}', lines[i+1])[0]
 
                 # Get invoice date
-                if date is None:
-                    if ('DATE' in lines[i].upper()) and (lines[i+1].count('/') == 2):
-                        date = re.search(r'\d{2}/\d{2}/\d{4}', lines[i+1])[0]
-                        date = pd.to_datetime(date, format='%d/%m/%Y').strftime('%d %b %Y')
+                if date is None and ('DATE' in line.upper()) and (lines[i+1].count('/') == 2):
+                    date = re.search(r'\d{2}/\d{2}/\d{4}', lines[i+1])[0]
+                    date = pd.to_datetime(date, format='%d/%m/%Y').strftime('%d-%b-%y')
 
                 # Get subcon and location
-                match = re.search(loc_subcon_pattern, lines[i])
+                match = re.search(loc_subcon_pattern, line)
                 if match:
-                    location = match.group("location").strip() if not None else ""
-                    subcon = match.group("subcon").strip().upper() if not None else ""
+                    subcon = (match.group("subcon") or "").strip().upper()
+                    location = (match.group("location") or "").strip().upper()
+                    building = (match.group("building") or "").strip().upper()
 
                 # Get invoice details
-                match = pattern.match(lines[i])
-                split_match2 = split_pattern2.match(lines[i])
+                match = pattern.match(line)
+                split_match2 = split_pattern2.match(line)
 
                 if match:
                     do_line = list(match.groups())
@@ -155,7 +160,7 @@ def process_pdf(df_all, pdf_file_paths):
                     do_qty = do_line[3]
                     do_unitprice = do_line[4]
                     do_invoice_amt = float(do_line[5].replace(",", ""))
-                    
+
                     # Check if underload
                     if '*' in do_desc:
                         # Add entry without underload
@@ -185,7 +190,7 @@ def process_pdf(df_all, pdf_file_paths):
                         do_subtotal = do_line2[3]
 
                         # Check if underload
-                        if ('*' in do_desc) or ('*' in lines[i]):
+                        if ('*' in do_desc) or ('*' in line):
                             # Add entry without underload
                             do_desc = do_desc.replace('*', '')
                             do_desc = do_desc.strip()
@@ -199,18 +204,18 @@ def process_pdf(df_all, pdf_file_paths):
                         contents.append([do_mth, do_date, do_no, do_desc, do_qty, do_unitprice])
 
                 # Get underload charges
-                if 'UNDERLOAD CHARGES' in lines[i].upper():
-                    underload_unitprice = lines[i].split(' ')[-1]
+                if 'UNDERLOAD CHARGES' in line.upper():
+                    underload_unitprice = line.split(' ')[-1]
 
                 # Get sub-total
-                if 'SUB-TOTAL' in lines[i].upper():
-                    sub_total = float(lines[i].split('$')[-1].replace(',', ''))
+                if 'SUB-TOTAL' in line.upper():
+                    sub_total = float(line.split('$')[-1].replace(',', ''))
 
         # Get unique descriptions and total qty
         pricings, total_qty = get_totals(contents)
 
         # Add rows to dataframe
-        unique_rows = len(pricings.keys())-1
+        unique_rows = len(pricings.keys()) - 1
         total_rows = len(contents)
         df_data = df_data.reindex(range(total_rows))
         
@@ -221,6 +226,7 @@ def process_pdf(df_all, pdf_file_paths):
             do_no,
             description2,
             qty,
+            unit_price,
             amount,
             code_1,
             code_2,
@@ -239,6 +245,7 @@ def process_pdf(df_all, pdf_file_paths):
             do_no=do_no,
             description2=description2,
             qty=qty,
+            unit_price=unit_price,
             amount=amount,
             code_1=code_1,
             code_2=code_2,
@@ -248,6 +255,8 @@ def process_pdf(df_all, pdf_file_paths):
             date=date,
             sub_total=sub_total,
             subcon=subcon,
+            location=location,
+            building=building,
         )
 
         # Add empty row
@@ -286,6 +295,9 @@ def process_excel(excel_file_path):
     
     # Extract data from "Comments at Order Time" column
     extracted_data = df_xlsx["Comments at Order Time"].apply(process_comment)
+
+    # Convert to DataFrame by normalizing the list of dictionaries
+    df_comments = pd.DataFrame(extracted_data.tolist())
 
     # Make a new dataframe to store the extracted data from comments
     df_comments = pd.DataFrame({
@@ -353,26 +365,27 @@ def panu_main(pdf_file_paths, excel_file_paths):
             "Unit Rate",
             "Subtotal Amount",
             "Total Amt per Inv",
+            "Invoice No.",
             "For Month (YYYY MM)",
+            "Location/Site",
             "Zone",
             "Comments at Order Time",
-            "Purchaser Personnel Name & Contact",
-            "LP",
-            "Gate No.",
             "Name of signee",
-            "Bored Pile No.: OR Location ***",
-            "Size",
-            "For TAK or Subcon? [Pintary/BBR/KKL...etc]",
+            "Building",
+            "Subcons",
             "DO Date",
             "DO No.",
             "Description2",
-            "Code1",
-            "Code2",
-            "Code3",
-            "Code4",
+            "Conc. Grade",
+            "Conc. Slump",
+            "Admix. 1",
+            "Admix. 2",
+            "Admix. 3",
             "Qty",
+            "Vendor Invoice Unit Rate (S$)",
             "Subtotal (S$)",
-        ]
+            "Calculated Subtotal (S$)",
+            ]
     ]
 
     return df_all

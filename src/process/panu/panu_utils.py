@@ -83,8 +83,8 @@ def get_totals(contents):
         pricings (dict): Dictionary of unique descriptions and unit prices
         total_qty (dict): Dictionary of unique descriptions and total quantities
     """
-    pricings = dict()
-    total_qty = dict()
+    pricings = {}
+    total_qty = {}
 
     for entries in contents:
         if entries[3] not in pricings:
@@ -152,22 +152,24 @@ def get_data(contents):
         do_no (list): List of do_no
         description2 (list): List of description2
         qty (list): List of qty
+        unit_price (list): List of unit prices
         amount (list): List of invoice amounts
         code_1 (list): List of concrete grades
         code_2 (list): List of slump values
         code_3 (list): List of retardant used
         code_4 (list): List of retardant duration
     """
-    for_month = list()
-    do_date = list()
-    do_no = list()
-    description2 = list()
-    qty = list()
-    amount = list()
-    code_1 = list()
-    code_2 = list()
-    code_3 = list()
-    code_4 = list()
+    for_month = []
+    do_date = []
+    do_no = []
+    description2 = []
+    qty = []
+    unit_price = []
+    amount = []
+    code_1 = []
+    code_2 = []
+    code_3 = []
+    code_4 = []
 
     for sublist in contents:
         for_month.append(sublist[0])
@@ -175,6 +177,7 @@ def get_data(contents):
         do_no.append(sublist[2])
         description2.append(sublist[3])
         qty.append(sublist[4])
+        unit_price.append(sublist[5])
         amount.append(sublist[6])
 
         # Get code contents
@@ -184,7 +187,7 @@ def get_data(contents):
         code_3.append(code_contents[2])
         code_4.append(code_contents[3])
         
-    return for_month, do_date, do_no, description2, qty, amount, code_1, code_2, code_3, code_4
+    return for_month, do_date, do_no, description2, qty, unit_price, amount, code_1, code_2, code_3, code_4
 
 
 def add_data(
@@ -197,6 +200,7 @@ def add_data(
     do_no,
     description2,
     qty,
+    unit_price,
     amount,
     code_1,
     code_2,
@@ -206,6 +210,8 @@ def add_data(
     date,
     sub_total,
     subcon,
+    location,
+    building,
 ):
     """
     Add data to dataframe.
@@ -220,6 +226,7 @@ def add_data(
         do_no (list): List of do_no
         description2 (list): List of description2
         qty (list): List of qty
+        unit_price (list): List of unit prices
         amount (list): List of invoice amount
         code_1 (list): List of concrete grades
         code_2 (list): List of slump values
@@ -229,35 +236,46 @@ def add_data(
         date (str): Invoice date
         sub_total (float): Subtotal amount
         subcon (str): Subcon name
+        location (str): Location of project
+        building (str): Building name
 
     Returns:
         df_data (pandas.core.frame.DataFrame): Dataframe of table
     """
-    df_data.loc[0, "Inv No."] = inv_no
+    # Add singular row data
+    df_data.loc[0, "Inv No."] = int(inv_no)
     df_data.loc[0, "Date"] = date
     df_data.loc[0, "Total Amt per Inv"] = sub_total
 
+    # Add unique rows data
     df_data.loc[:unique_rows, "Description"] = list(pricings.keys())
     df_data.loc[:unique_rows, "Total Qty"] = list(total_qty.values())
     df_data.loc[:unique_rows, "Unit Rate"] = list(pricings.values())
 
+    # Add the rest of the data
+    df_data["Invoice No."] = int(inv_no)
     df_data["For Month (YYYY MM)"] = for_month
-    df_data["For TAK or Subcon? [Pintary/BBR/KKL...etc]"] = subcon
-    df_data["Zone"] = zone_dict[subcon.upper()]
+    df_data["Location/Site"] = location
+    df_data["Building"] = building
+    df_data["Subcons"] = subcon
+    df_data["Zone"] = zone_dict[subcon.upper()] if subcon.upper() in zone_dict else ""
     df_data["DO Date"] = do_date
     df_data["DO No."] = do_no
     df_data["Description2"] = description2
     df_data["Qty"] = qty
+    df_data["Vendor Invoice Unit Rate (S$)"] = unit_price
     df_data["Subtotal (S$)"] = amount
-    df_data["Code1"] = code_1
-    df_data["Code2"] = code_2
-    df_data["Code3"] = code_3
+    df_data["Conc. Grade"] = code_1
+    df_data["Conc. Slump"] = code_2
+    df_data["Admix. 1"] = code_3
     df_data["Code4"] = code_4
 
+    # Convert columns to numeric
     df_data["Total Qty"] = pd.to_numeric(df_data["Total Qty"], errors="coerce")
     df_data["Unit Rate"] = pd.to_numeric(df_data["Unit Rate"], errors="coerce")
     df_data["Total Amt per Inv"] = pd.to_numeric(df_data["Total Amt per Inv"], errors="coerce")
     df_data["Qty"] = pd.to_numeric(df_data["Qty"], errors="coerce")
+    df_data["Vendor Invoice Unit Rate (S$)"] = pd.to_numeric(df_data["Vendor Invoice Unit Rate (S$)"], errors="coerce")
     df_data["Subtotal (S$)"] = pd.to_numeric(df_data["Subtotal (S$)"], errors="coerce")
 
     df_data["Subtotal Amount"] = df_data["Total Qty"] * df_data["Unit Rate"]
@@ -265,7 +283,7 @@ def add_data(
     # Add units
     for i in range(len(pricings.keys())):
         if "UNDERLOAD CHARGES" in df_data.loc[i, "Description"]:
-            df_data.loc[i, "Unit"] = "TRIP"
+            df_data.loc[i, "Unit"] = "trip"
         else:
             df_data.loc[i, "Unit"] = "m3"
 
@@ -329,7 +347,7 @@ def process_comment(comment):
                        name, number, pile, LP, and gate.
 
     Returns:
-        pd.Series: A Pandas Series containing the extracted fields in the following order:
+        dict: A dictionary containing the extracted fields in the following order:
             - name (str): The name extracted from the comment (title-cased).
             - number (str): The 8-digit number extracted from the comment.
             - pile (str): The pile identifier extracted (e.g., 'C101' or '101'), standardized if applicable.
@@ -359,5 +377,10 @@ def process_comment(comment):
     if gate_match:
         gate = process_field(gate_match.group('gate'), title_case=True)
     
-    # Return a Pandas Series containing the extracted fields
-    return pd.Series([name_number, pile, lp, gate])
+    # Return extracted fields as a dictionary
+    return {
+        "Purchaser Personnel Name & Contact": name_number,
+        "Bored Pile No.: OR Location ***": pile,
+        "LP": lp,
+        "Gate No.": gate,
+    }
