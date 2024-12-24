@@ -20,13 +20,16 @@ from .panu_utils import add_data, get_data, get_totals, process_comment
 
 # Pattern for location and subcon
 loc_subcon_pattern = re.compile(
-    r'\s*LOCATION/SITE'                     # Matches the literal "LOCATION/SITE"
-    r'\s*(?P<location>[A-Z\s]+ \d+)'        # Captures the location (uppercase letters, spaces, and a number)
-    r'[\s-]*'                               # Matches optional spaces or hyphens between location and subcon
-    r'\s*\((?:[A-Za-z]+-)?'                 # Non-capturing group to optionally match "(prefix-", like "(VSMC-"
-    r'\s*(?P<subcon>[A-Za-z\s]+)'           # Captures the subcon (allows spaces in the name)
-    r'(?:\s*-\s*(?P<building>[A-Za-z\s]+))?' # Optionally matches a dash and captures the building name
-    r'\s*\)?'                               # Matches optional closing parenthesis
+    r'\s*LOCATION/SITE'                             # Match literal "LOCATION/SITE"
+    r'\s+(?P<location>[A-Z\s]+ \d+)'                # Capture location (with trailing digit)
+    r'[\s-]*'                                       # Optional spaces/hyphens
+    r'\(\s*'                                        # Opening parenthesis
+    r'(?P<site>'                                    # Capture the entire content in parentheses
+       r'(?:[A-Za-z0-9]+-)?'                        # Optional prefix (e.g., "VSMC-")
+       r'\s*(?P<subcon>[A-Za-z0-9\s]+)'             # Capture "subcon" (allow letters, digits, spaces)
+       r'(?:\s*-\s*(?P<building>[A-Za-z0-9\s]+))?'  # Optionally capture "building" after a dash
+    r')'
+    r'\s*\)'                                        # Closing parenthesis
 )
 
 #############
@@ -144,7 +147,7 @@ def process_pdf(df_all, pdf_file_paths):
                 match = re.search(loc_subcon_pattern, line)
                 if match:
                     subcon = (match.group("subcon") or "").strip().upper()
-                    location = (match.group("location") or "").strip().upper()
+                    location_site = (match.group("site") or "").strip().upper()
                     building = (match.group("building") or "").strip().upper()
 
                 # Get invoice details
@@ -255,7 +258,7 @@ def process_pdf(df_all, pdf_file_paths):
             date=date,
             sub_total=sub_total,
             subcon=subcon,
-            location=location,
+            location_site=location_site,
             building=building,
         )
 

@@ -210,7 +210,7 @@ def add_data(
     date,
     sub_total,
     subcon,
-    location,
+    location_site,
     building,
 ):
     """
@@ -236,7 +236,7 @@ def add_data(
         date (str): Invoice date
         sub_total (float): Subtotal amount
         subcon (str): Subcon name
-        location (str): Location of project
+        location_site (str): Location/Site name
         building (str): Building name
 
     Returns:
@@ -255,7 +255,7 @@ def add_data(
     # Add the rest of the data
     df_data["Invoice No."] = int(inv_no)
     df_data["For Month (YYYY MM)"] = for_month
-    df_data["Location/Site"] = location
+    df_data["Location/Site"] = location_site
     df_data["Building"] = building
     df_data["Subcons"] = subcon
     df_data["Zone"] = zone_dict[subcon.upper()] if subcon.upper() in zone_dict else ""
