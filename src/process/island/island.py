@@ -5,6 +5,7 @@
 ####################
 
 # Generic/Built-in
+import os
 import re
 
 # Libs
@@ -20,7 +21,8 @@ from .island_utils import get_scanned_tables
 
 representative_pattern = re.compile(r'(?P<name>[A-Z\s]+)\s+(?P<contact>\d{8})')
 
-location_pattern = re.compile(r'(?:PILE:)?\(?([cCfFpP]\d{2,4}[a-zA-Z]?)\)?')
+# location_pattern = re.compile(r'(?:PILE:)?\(?([cCfFpP]\d{2,4}[a-zA-Z]?)\)?')
+location_pattern = re.compile(r"\((.*?)\)")
 
 subcon_pattern = re.compile(r'^([A-Za-z]+)')
 
@@ -98,7 +100,7 @@ def process_excel(excel_file_path):
         "DO No.": df_xlsx["TICKET NUMBER"],
         "Purchaser Representative": df_xlsx["PURCHASER REPRESENTATIVE"],
         "Bored Pile No.: OR Location ***": df_xlsx["PROJECT LOCATION"],
-        "Ordered by TAK or Subcon? [Pintary/ BBR/ KKL..etc]": df_xlsx["PROJECT NAME"],
+        "Subcons": df_xlsx["PROJECT NAME"],
         "Site Person": df_xlsx["SITE PERSON"],
     })
 
@@ -106,11 +108,21 @@ def process_excel(excel_file_path):
     df_comments[["Site Person Name", "Site Person Contact"]] = df_comments["Site Person"].str.extract(representative_pattern)
     df_comments = df_comments.drop("Site Person", axis=1)
 
-    # Update extracted columns
-    df_comments["Bored Pile No.: OR Location ***"] = df_comments["Bored Pile No.: OR Location ***"].str.extract(location_pattern)
-    df_comments["Bored Pile No.: OR Location ***"] = df_comments["Bored Pile No.: OR Location ***"].str.upper().str.replace(r'([A-Z])(\d+)', r'\1-\2', regex=True)
-    df_comments["Ordered by TAK or Subcon? [Pintary/ BBR/ KKL..etc]"] = df_comments["Ordered by TAK or Subcon? [Pintary/ BBR/ KKL..etc]"].str.extract(subcon_pattern)
-    df_comments["Zone"] = df_comments["Ordered by TAK or Subcon? [Pintary/ BBR/ KKL..etc]"].map(zone_dict)
+    # Updated extracted location
+    location_pattern_match = (
+        df_comments["Bored Pile No.: OR Location ***"]
+        .str.extract(location_pattern)[0]
+        .fillna(df_comments["Bored Pile No.: OR Location ***"])
+        .str.upper()
+        .str.replace(r'([A-Z])(\d+)', r'\1-\2', regex=True)
+        .str.strip()
+    )
+    if df_comments["Bored Pile No.: OR Location ***"] is not None:
+        df_comments["Bored Pile No.: OR Location ***"] = location_pattern_match
+
+    # Update the other extracted columns
+    df_comments["Subcons"] = df_comments["Subcons"].str.extract(subcon_pattern)
+    df_comments["Zone"] = df_comments["Subcons"].map(zone_dict)
 
     # Remove NaN rows and header
     df_comments = df_comments.dropna(subset=['DO No.'])
@@ -118,6 +130,7 @@ def process_excel(excel_file_path):
     df_comments.reset_index(drop=True, inplace=True)
 
     # Update column data types
+    df_comments["DO No."] = df_comments["DO No."].astype("object")
     df_comments["Site Person Contact"] = df_comments["Site Person Contact"].astype(int)
 
     return df_comments
@@ -151,16 +164,19 @@ def island_main(pdf_file_paths, excel_file_paths):
         "Site Person Contact",
         "Purchaser Representative",
         "Bored Pile No.: OR Location ***",
-        "Size",
-        "Ordered by TAK or Subcon? [Pintary/ BBR/ KKL..etc]",
+        "Building",
+        "Subcons",
         "DO Date",
         "DO No.",
         "Description2",
-        "Code1",
-        "Code2",
-        "Code3",
-        "Code4",
+        "Conc. Grade",
+        "Conc. Slump",
+        "Admix. 1",
+        "Admix. 2",
+        "Admix. 3",
         "Qty",
+        "Unit2",
+        "Vendor Invoice Unit Rate (S$)",
         "Vendor Invoice Amount",
     ]
 
@@ -172,7 +188,13 @@ def island_main(pdf_file_paths, excel_file_paths):
         df_comments = process_excel(excel_file_paths[0])
 
         # Merge df_all and df_comments based on DO No.
-        df_all = pd.merge(df_all, df_comments, how='left', on='DO No.')
+        if "DO No." not in df_all.columns:
+            for pdf_file_path in pdf_file_paths:
+                filename = os.path.basename(pdf_file_path)
+                st.error(f"Failed to extract the following PDF: {filename}")
+            return None
+        else:
+            df_all = pd.merge(df_all, df_comments, how='left', on='DO No.')
 
     # Add empty column for future use
     df_all["Size"] = None
