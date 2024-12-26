@@ -61,27 +61,37 @@ def brc_main(pdf_file_paths):
 
     # Iterate through files
     for index, f in enumerate(pdf_file_paths):
-        # Get table from PDF
-        table = get_table(f)
+        try:
+            # Get table from PDF
+            table = get_table(f)
 
-        # Get other variables of interest and add it to table
-        pdf_file = PdfReader(open(f, "rb"))
-        page = pdf_file.pages[0]
-        text = page.extract_text()
-        lines = text.split("\n")
-        table = complete_table(table, lines)
+            # Get other variables of interest
+            pdf_file = PdfReader(open(f, "rb"))
+            page = pdf_file.pages[0]
+            text = page.extract_text()
+            lines = text.split("\n")
+            
+            # Add extracted info to table
+            table = complete_table(table, lines)
 
-        # Sort table columns
-        table = table[headers]
+            # Sort table columns
+            table = table[headers]
 
-        # Append to dataframe
-        dfs = pd.concat([dfs, table], ignore_index=True)
+            # Append to dataframe
+            dfs = pd.concat([dfs, table], ignore_index=True)
 
-        # Update the Streamlit progress bar
-        percent_complete = (index + 1) / len(pdf_file_paths)
-        progress.progress(percent_complete)
-        status_text.text(
-            f"Processed: {index + 1}/{len(pdf_file_paths)} files ({int(percent_complete*100)}% complete)"
-        )
+        except Exception as e:
+            # If there's an error, log the file path
+            st.error(f"Error processing file {f}: {str(e)}")
+            error_files.append(f)
+
+        finally:
+            # Update the Streamlit progress bar and status text
+            percent_complete = (index + 1) / len(pdf_file_paths)
+            progress.progress(percent_complete)
+            status_text.text(
+                f"Processed: {index + 1}/{len(pdf_file_paths)} files "
+                f"({int(percent_complete*100)}% complete)"
+            )
 
     return dfs, error_files
