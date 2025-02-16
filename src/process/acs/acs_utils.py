@@ -211,7 +211,6 @@ def add_data(
 
     df_data["For Month (YYYY MM)"] = for_month
     df_data["Ordered by TAK or Subcon? [Pintary/ BBR/ KKL..etc]"] = subcon
-    df_data["Zone"] = zone_dict[subcon.upper()]
     df_data["DO Date"] = do_date
     df_data["DO No."] = do_no
     df_data["Description2"] = description2
@@ -221,6 +220,11 @@ def add_data(
     df_data["Code2"] = None
     df_data["Code3"] = code_3
     df_data["Code4"] = code_4
+
+    if subcon.upper() in zone_dict:
+        df_data["Zone"] = zone_dict[subcon.upper()]
+    else:
+        df_data["Zone"] = subcon
 
     df_data["Total Qty"] = pd.to_numeric(df_data["Total Qty"], errors="coerce")
     df_data["Unit Rate"] = pd.to_numeric(df_data["Unit Rate"], errors="coerce")

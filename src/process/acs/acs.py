@@ -30,11 +30,11 @@ inv_pattern = re.compile(
 
 # Pattern for location and subcon
 loc_subcon_pattern = re.compile(
-    r'\s*(?P<project>[A-Za-z]+)'                    # Project
+    r'\s*(?P<project>[A-Za-z]+)'                        # Project
     r'\s*@'
-    r'\s*(?P<location>[A-Z\s\.]+)-'                 # Location
-    r'\s*(?P<subcon>[A-Z]+)'                        # Subcontractor
-    r'\s*Contract\s*No\s*:\s*(?P<contact>\d+)\s*'  # Contact number
+    r'\s*(?P<location>[A-Z\s\.]+)-'                     # Location
+    r'\s*(?P<subcon>[A-Z\s]+)(?=\s*Contract\s*No\s*:)'  # Subcontractor
+    r'\s*Contract\s*No\s*:\s*(?P<contact>\d+)\s*'       # Contact number
 )
 
 #############
@@ -85,7 +85,7 @@ def process_pdf(df_all, pdf_file_paths):
         df_data = pd.DataFrame(columns=data_headers)
         inv_no = None
         date = None
-        subcon = None
+        subcon = ""
         contents = list()
 
         # Iterate through pages
