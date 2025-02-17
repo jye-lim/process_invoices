@@ -258,7 +258,6 @@ def add_data(
     df_data["Location/Site"] = location_site
     df_data["Building"] = building
     df_data["Subcons"] = subcon
-    df_data["Zone"] = zone_dict[subcon.upper()] if subcon.upper() in zone_dict else ""
     df_data["DO Date"] = do_date
     df_data["DO No."] = do_no
     df_data["Description2"] = description2
@@ -269,6 +268,11 @@ def add_data(
     df_data["Conc. Slump"] = code_2
     df_data["Admix. 1"] = code_3
     df_data["Code4"] = code_4
+
+    if subcon.upper() in zone_dict:
+        df_data["Zone"] = zone_dict[subcon.upper()]
+    else:
+        df_data["Zone"] = subcon
 
     # Convert columns to numeric
     df_data["Total Qty"] = pd.to_numeric(df_data["Total Qty"], errors="coerce")

@@ -125,7 +125,7 @@ def process_pdf(df_all, pdf_file_paths):
         df_data = pd.DataFrame(columns=data_headers)
         ref_no = None
         date = None
-        subcon = None
+        subcon = ""
         contents = []
 
         # Iterate through pages
