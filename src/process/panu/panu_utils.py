@@ -126,15 +126,20 @@ def extract_description(desc):
         rtd (str): RTD if retardant was used, else ""
         duration (str): Duration of retardation
     """
+    # Initialise defaults
+    grade = size = rtd = duration = ""
+
+    # Match the description pattern
     match = re.search(description_pattern, desc)
-    if match:
-        gde = match.group(1) if match.group(1) else ""
-        size = match.group(2) if match.group(2) else ""
-        duration = match.group(3) if match.group(3) else ""
-        rtd = match.group(4) if match.group(4) else ""
+    if not match:
+        return grade, size, rtd, duration
     
-    # Convert grade data
-    grade = grade_dict[gde[-2:]]
+    # Unpack the match
+    gde = match.group(1) or ""
+    size = match.group(2) or ""
+    duration = match.group(3) or ""
+    rtd = match.group(4) or ""
+    grade = grade_dict.get(gde[-2:], "")
 
     return grade, size, rtd, duration
 
@@ -360,8 +365,8 @@ def process_comment(comment):
             
         If no match is found for a specific field, an empty string is returned for that field.
     """
-    # Initialize fields with default values
-    name, number, pile, lp, gate = "", "", "", "", ""
+    # Initialise defaults
+    name = name_number = pile = lp = gate = ""
 
     # Run regex searches on the comment
     start_match = re.search(start_pattern, comment)

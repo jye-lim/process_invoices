@@ -303,9 +303,23 @@ def get_scanned_tables(file_path):
             continue
 
         # Normalise column names
-        for i, df in enumerate(df_list):
+        mismatch = False
+        for df in df_list:
             if not df.columns.equals(pd.Index(reference_columns)):
-                df.columns = reference_columns
+                if len(df.columns) == len(reference_columns):
+                    # Rename columns to match reference
+                    df.columns = reference_columns
+
+                # If column length do not match, set flag to continue to next DO
+                else:
+                    filename = os.path.basename(file_path)
+                    st.write(f"Column mismatch in {filename} from page {start + 1} to {end + 1}.")
+                    mismatch = True
+                    break
+
+        # If mismatch found, continue to next DO
+        if mismatch:
+            continue
 
         # Stack dataframes together
         df_do = pd.concat(df_list, ignore_index=True)
@@ -364,6 +378,7 @@ def get_scanned_tables(file_path):
         df_do["Building"] = building_list[start]
 
         # Get summary data and update remaining NaN columns
+        df_do = df_do.reset_index(drop=True)
         total_amt = 0
         unique_desc = df_do["Description2"].unique()
         for i, desc in enumerate(unique_desc):
