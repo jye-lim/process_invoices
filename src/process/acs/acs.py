@@ -37,6 +37,12 @@ loc_subcon_pattern = re.compile(
     r'\s*Contract\s*No\s*:\s*(?P<contact>\d+)\s*'       # Contact number
 )
 
+# Pattern to match subtotal
+subtotal_pattern = re.compile(
+    r'(\d{1,3}(?:,\d{3})*(?:\.\d+)?)(?!.*\d)',
+    flags=re.IGNORECASE
+)
+
 #############
 # Functions #
 #############
@@ -140,7 +146,9 @@ def process_pdf(df_all, pdf_file_paths):
 
                 # Get sub-total
                 if 'SUB-TOTAL' in lines[i].upper():
-                    sub_total = float(lines[i].split(' ')[-1].replace(',', ''))
+                    match = re.search(subtotal_pattern, lines[i])
+                    if match:
+                        sub_total = float(match.group(1).replace(',', ''))
 
         # Get unique descriptions and total qty
         pricings, total_qty = get_totals(contents)
