@@ -220,6 +220,11 @@ def process_pdf(df_all, pdf_file_paths):
         # Add rows to dataframe
         unique_rows = len(pricings.keys()) - 1
         total_rows = len(contents)
+
+        # Check if any data was found
+        if total_rows == 0:
+            continue
+        
         df_data = df_data.reindex(range(total_rows))
         
         # Get data from contents
@@ -237,7 +242,7 @@ def process_pdf(df_all, pdf_file_paths):
             code_4,
         ) = get_data(contents)
 
-        # Add data to dataframe, if error, add file name and continue
+        # Add data to dataframe
         df_data = add_data(
             df_data=df_data,
             unique_rows=unique_rows,
