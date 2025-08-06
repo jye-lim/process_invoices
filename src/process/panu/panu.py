@@ -29,7 +29,7 @@ loc_subcon_pattern = re.compile(
        r'\s*(?P<subcon>[A-Za-z0-9\s]+)'             # Capture "subcon" (allow letters, digits, spaces)
        r'(?:\s*-\s*(?P<building>[A-Za-z0-9\s]+))?'  # Optionally capture "building" after a dash
     r')'
-    r'\s*\)'                                        # Closing parenthesis
+    r'\s*\)?'                                       # Make closing parenthesis optional
 )
 
 #############
@@ -146,6 +146,12 @@ def process_pdf(df_all, pdf_file_paths):
                 # Get subcon and location
                 match = re.search(loc_subcon_pattern, line)
                 if match:
+                    # For multiple lines with location and subcon
+                    if ")" not in line:
+                        line = (line.strip() + " " + lines[i+1].strip()).strip()
+                        match = re.search(loc_subcon_pattern, line)
+
+                    # Extract location, subcon, and building
                     subcon = (match.group("subcon") or "").strip().upper()
                     location_site = (match.group("site") or "").strip().upper()
                     building = (match.group("building") or "").strip().upper()
