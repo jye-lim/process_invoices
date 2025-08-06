@@ -153,9 +153,13 @@ def process_pdf(df_all, pdf_file_paths):
         # Get unique descriptions and total qty
         pricings, total_qty = get_totals(contents)
 
-        # Add rows to dataframe
+        # Get total rows and unique rows
         unique_rows = len(pricings.keys())-1
         total_rows = len(contents)
+        if total_rows == 0:
+            continue
+
+        # Add rows to dataframe
         df_data = df_data.reindex(range(total_rows))
 
         # Get data from contents
